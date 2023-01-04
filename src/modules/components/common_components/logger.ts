@@ -63,14 +63,12 @@ export enum RESOURCES {
   enterTextPromptMessageFormat = "enterTextPromptMessageFormat",
   defaultPromptOptionFormat = "defaultPromptOptionFormat",
 
-  loggerInfoString = "loggerInfoString",
+
   loggerInfoStringWithDate = "loggerInfoStringWithDate",
-  loggerWarnString = "loggerWarnString",
+
   loggerWarnStringWithDate = "loggerWarnStringWithDate",
-  loggerErrorString = "loggerErrorString",
+
   loggerErrorStringWithDate = "loggerErrorStringWithDate",
-  loggerImportantInfoString = "loggerImportantInfoString",
-  loggerImportantInfoStringWithDate = "loggerImportantInfoStringWithDate",
 
   loggerStackTraceString = "loggerStackTraceString",
   loggerTimeElapsedString = "loggerTimeElapsedString",
@@ -536,185 +534,67 @@ export class Logger implements IAppLogger {
     }
 
     // Try to fetch message string from the resource
-    message = this.getResourceString.apply(this, [message, ...tokens]);
+    message = this.getResourceString.apply(this, [message, ...tokens]) || '';
 
     // Check verbosity
     let allowUxOutput = true;
-    if ([LOG_MESSAGE_TYPE.ERROR,
-    LOG_MESSAGE_TYPE.IMPORTANT_JSON,
-    LOG_MESSAGE_TYPE.IMPORTANT_STRING,
-    LOG_MESSAGE_TYPE.IMPORTANT_OBJECT,
-    LOG_MESSAGE_TYPE.WARN].indexOf(type) < 0) {
-      if (this.uxLoggerVerbosity < verbosity) {
-        allowUxOutput = false;
-      }
+    // Warning and error are always to be printed
+    if (type != LOG_MESSAGE_TYPE.ERROR && this.uxLoggerVerbosity < verbosity) {
+      allowUxOutput = false;
     }
 
-    // Format the message
-    let fileLogMessage: string;
-    let uxLogMessage = message as string | object;
-
-    if ([LOG_MESSAGE_TYPE.IMPORTANT_JSON,
-    LOG_MESSAGE_TYPE.JSON,
-    LOG_MESSAGE_TYPE.OBJECT,
-    LOG_MESSAGE_TYPE.TABLE].indexOf(type) >= 0) {
-      // Message should be an object ****
-      if (typeof message !== "object") {
-        // A string - incorrect --
-        try {
-          // Try to treat the message as json string
-          uxLogMessage = JSON.parse(String(message));
-          // Stringify to compress json string back if originally it was prettified
-          fileLogMessage = JSON.stringify(uxLogMessage);
-        } catch (ex) {
-          // Message in unknown string format
-          uxLogMessage = String(message);
-          fileLogMessage = uxLogMessage;
-        }
-      } else {
-        // An object - correct ---
-        try {
-          //Json string
-          fileLogMessage = JSON.stringify(message);
-        } catch (ex) {
-          // Unknown format
-          fileLogMessage = String(message);
-        }
-      }
-    } else {
-      // Message should be a string ***
-      if (typeof message === "object") {
-        // An object - incorrect --
-        try {
-          // Try to convert to json string
-          uxLogMessage = JSON.stringify(message);
-        } catch (ex) {
-          // Treat the message as unknown object format
-          uxLogMessage = String(message);
-        }
-      } else {
-        // A string - correct --
-        uxLogMessage = String(message);
-      }
-      // Always a string
-      fileLogMessage = String(uxLogMessage);
-    }
-    // Get the date string
     let dateString = Common.formatDateTime(new Date());
-    let uxOutput: any;
+    let logMessage: string;
 
-    switch (type) {
+    if (!message) {
+      logMessage = '\n';
+      allowUxOutput && this.uxLogger.log('');
+    } else {
 
-      case LOG_MESSAGE_TYPE.FILE_LOG_ONLY:
-        this.fileLogger.error(fileLogMessage);
-        break;
+      switch (type) {
 
-      case LOG_MESSAGE_TYPE.ERROR:
-        if (allowUxOutput) {
-          let m = <string>uxLogMessage || "";
-          if (this.uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.VERBOSE && m.trim()) {
-            uxOutput = this.getResourceString(RESOURCES.loggerErrorStringWithDate, dateString, <string>uxLogMessage);
-          } else {
-            uxOutput = this.getResourceString(RESOURCES.loggerErrorString, <string>uxLogMessage);
-          }
-          this.uxLogger.error(uxOutput);
-        }
-        this.fileLogger.error(fileLogMessage);
-        break;
+        default:
+        case LOG_MESSAGE_TYPE.STRING:
+          logMessage = this.getResourceString(RESOURCES.loggerInfoStringWithDate, dateString, message as string);
+          allowUxOutput && this.uxLogger.log(logMessage);
+          break;
 
-      case LOG_MESSAGE_TYPE.HEADER:
-        if (allowUxOutput && this.uxLoggerLevel != LoggerLevel.ERROR
-          && this.uxLoggerLevel != LoggerLevel.WARN) {
-          this.uxLogger.styledHeader(String(uxLogMessage).toUpperCase());
-        }
-        this.fileLogger.log(String(fileLogMessage).toUpperCase());
-        break;
+        case LOG_MESSAGE_TYPE.ERROR:
+          logMessage = this.getResourceString(RESOURCES.loggerErrorStringWithDate, dateString, message as string);
+          allowUxOutput && this.uxLogger.log(logMessage);
+          break;
 
-      case LOG_MESSAGE_TYPE.IMPORTANT_JSON:
-        if (allowUxOutput) {
-          this.uxLogger.styledJSON(uxLogMessage);
-        }
-        this.fileLogger.log(fileLogMessage);
-        break;
+        case LOG_MESSAGE_TYPE.WARN:
+          logMessage = this.getResourceString(RESOURCES.loggerWarnStringWithDate, dateString, message as string);
+          allowUxOutput && this.uxLogger.log(logMessage);
+          break;
 
-      case LOG_MESSAGE_TYPE.IMPORTANT_STRING:
-        if (allowUxOutput
-          && this.uxLoggerLevel != LoggerLevel.ERROR) {
-          let m = <string>uxLogMessage || "";
-          if (this.uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.VERBOSE && m.trim()) {
-            uxOutput = this.getResourceString(RESOURCES.loggerImportantInfoStringWithDate, dateString, <string>uxLogMessage);
-          }
-          else {
-            uxOutput = this.getResourceString(RESOURCES.loggerImportantInfoString, <string>uxLogMessage);
-          }
-          this.uxLogger.log(uxOutput);
-        }
-        this.fileLogger.log(fileLogMessage);
-        break;
-
-
-      case LOG_MESSAGE_TYPE.JSON:
-        if (allowUxOutput && this.uxLoggerLevel != LoggerLevel.ERROR
-          && this.uxLoggerLevel != LoggerLevel.WARN) {
-          this.uxLogger.styledJSON(uxLogMessage);
-        }
-        this.fileLogger.log(fileLogMessage);
-        break;
-
-      case LOG_MESSAGE_TYPE.IMPORTANT_OBJECT:
-        if (allowUxOutput) {
-          this.uxLogger.styledObject(uxLogMessage);
-        }
-        this.fileLogger.log(fileLogMessage);
-        break;
-
-      case LOG_MESSAGE_TYPE.OBJECT:
-        if (allowUxOutput && this.uxLoggerLevel != LoggerLevel.ERROR
-          && this.uxLoggerLevel != LoggerLevel.WARN) {
-          this.uxLogger.styledObject(uxLogMessage);
-        }
-        this.fileLogger.log(fileLogMessage);
-        break;
-
-      case LOG_MESSAGE_TYPE.TABLE:
-        if (allowUxOutput && this.uxLoggerLevel != LoggerLevel.ERROR
-          && this.uxLoggerLevel != LoggerLevel.WARN) {
-          this.uxLogger.table((<ITableMessage>message).tableBody, {
-            columns: (<ITableMessage>message).tableColumns
+        case LOG_MESSAGE_TYPE.TABLE:
+          logMessage = String(message);
+          allowUxOutput && this.uxLogger.table((message as ITableMessage).tableBody, {
+            columns: (message as ITableMessage).tableColumns
           });
-        }
-        this.fileLogger.log(fileLogMessage);
-        break;
+          break;
 
-      case LOG_MESSAGE_TYPE.WARN:
-        if (allowUxOutput && !this.noWarningsFlag
-          && this.uxLoggerLevel != LoggerLevel.ERROR) {
-          let m = <string>uxLogMessage || "";
-          if (this.uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.VERBOSE && m.trim()) {
-            uxOutput = this.getResourceString(RESOURCES.loggerWarnStringWithDate, dateString, <string>uxLogMessage);
-          } else {
-            uxOutput = this.getResourceString(RESOURCES.loggerWarnString, <string>uxLogMessage);
-          }
-          this.uxLogger.warn(uxOutput);
-        }
-        this.fileLogger.warn(fileLogMessage);
-        break;
+        case LOG_MESSAGE_TYPE.JSON:
+          logMessage = JSON.stringify(message);
+          allowUxOutput && this.uxLogger.styledJSON(message);
+          break;
 
-      default: // STRING
-        if (allowUxOutput && this.uxLoggerLevel != LoggerLevel.ERROR
-          && this.uxLoggerLevel != LoggerLevel.WARN) {
-          let m = <string>uxLogMessage || "";
-          if (this.uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.VERBOSE && m.trim()) {
-            uxOutput = this.getResourceString(RESOURCES.loggerInfoStringWithDate, dateString, <string>uxLogMessage);
-          } else {
-            uxOutput = this.getResourceString(RESOURCES.loggerInfoString, <string>uxLogMessage);
-          }
-          this.uxLogger.log(uxOutput);
-        }
-        this.fileLogger.log(fileLogMessage);
-        break;
+        case LOG_MESSAGE_TYPE.OBJECT:
+          logMessage = JSON.stringify(message);
+          allowUxOutput && this.uxLogger.styledObject(message);
+          break;
 
+        case LOG_MESSAGE_TYPE.HEADER:
+          logMessage = String(message).toUpperCase();
+          allowUxOutput && this.uxLogger.styledHeader(message);
+          break;
+
+      }
     }
+
+    this.fileLogger.log(logMessage);
 
   }
 
@@ -877,16 +757,6 @@ export class Logger implements IAppLogger {
       return;
     }
 
-    let messageString = "";
-
-    if (typeof message == 'string') {
-      // Try to fetch message string from the resource
-      messageString = this.getResourceString.apply(this, [message, ...tokens]);
-    } else {
-      // Object
-      messageString = JSON.stringify(message);
-    }
-
     this.log('');
 
     let statusString = COMMAND_EXIT_STATUSES[status].toString();
@@ -894,102 +764,50 @@ export class Logger implements IAppLogger {
     let timeElapsedString = Common.timeDiffString(this.startTime, endTime);
 
     if (this.jsonFlag) {
-      // As JSON ....
-      if (status == COMMAND_EXIT_STATUSES.SUCCESS) {
-        // Success
-        // Full success result to stdout
-        this.log({
-          command: this.commandFullName,
-          cliCommandString: Common.getFullCommandLine(),
-          endTime: Common.convertUTCDateToLocalDate(endTime),
-          endTimeUTC: endTime,
-          result: message,
-          startTime: Common.convertUTCDateToLocalDate(this.startTime),
-          startTimeUTC: this.startTime,
-          status: status,
-          statusString: statusString,
-          timeElapsed: timeElapsedString
-        } as IExitSuccessMessage, LOG_MESSAGE_TYPE.IMPORTANT_JSON);
-
-      } else {
-        // Error
-        // Full error resut to stdout
-        this.log({
-          command: this.commandFullName,
-          cliCommandString: Common.getFullCommandLine(),
-          endTime: Common.convertUTCDateToLocalDate(endTime),
-          endTimeUTC: endTime,
-          message: message,
-          stack: stack,
-          startTime: Common.convertUTCDateToLocalDate(this.startTime),
-          startTimeUTC: this.startTime,
-          status: status,
-          statusString: statusString,
-          timeElapsedString: timeElapsedString
-        } as IExitFailedMessage, LOG_MESSAGE_TYPE.IMPORTANT_JSON);
-      }
+      // As JSON
+      this.log({
+        command: this.commandFullName,
+        cliCommandString: Common.getFullCommandLine(),
+        endTime: Common.convertUTCDateToLocalDate(endTime),
+        endTimeUTC: endTime,
+        message: message,
+        stack: stack,
+        startTime: Common.convertUTCDateToLocalDate(this.startTime),
+        startTimeUTC: this.startTime,
+        status: status,
+        statusString: statusString,
+        timeElapsedString: timeElapsedString
+      } as IExitFailedMessage,
+        LOG_MESSAGE_TYPE.JSON,
+        LOG_MESSAGE_VERBOSITY.NONE,
+        ...tokens);
 
     } else {
-      // As STRING OR OBJECT ....
 
-      if (typeof message !== "object") {
-        // As STRING...
-        if (status == COMMAND_EXIT_STATUSES.SUCCESS) {
-          // Success
-          // Success result only to stdout
-          this.log(message, LOG_MESSAGE_TYPE.IMPORTANT_STRING);
-
-        } else {
-          // Error
-          // Error message only to stderr
-          this.log(messageString, LOG_MESSAGE_TYPE.ERROR);
-          // Stack trace to stdout
-          if (stack) {
-            if (this.uxLoggerLevel == LoggerLevel.TRACE) {
-              // Print stack trace to Console + File
-              this.log(
-                this.getResourceString(RESOURCES.loggerStackTraceString, stack),
-                LOG_MESSAGE_TYPE.IMPORTANT_STRING
-              );
-            } else {
-              // Print stack trace to File only
-              this.log(this.getResourceString(RESOURCES.loggerStackTraceString, stack),
-                LOG_MESSAGE_TYPE.FILE_LOG_ONLY);
-            }
-          }
-        }
-
-      } else {
-        // As FORMATTED OBJECT...
-        // Success result as formatted object to stdout
-        this.log(message, LOG_MESSAGE_TYPE.IMPORTANT_OBJECT);
-
-        if (status != COMMAND_EXIT_STATUSES.SUCCESS) {
-          // Error
-          // Error message only to stderr
-          this.log(messageString, LOG_MESSAGE_TYPE.ERROR);
-          // Stack trace to stdout
-          if (stack) {
-            this.log(
-              this.getResourceString(RESOURCES.loggerStackTraceString, stack),
-              LOG_MESSAGE_TYPE.IMPORTANT_STRING
-            );
-          }
-        }
-      }
+      // As STRING
+      this.log(String(message),
+        LOG_MESSAGE_TYPE.STRING,
+        LOG_MESSAGE_VERBOSITY.NONE,
+        ...tokens);
 
       // "Command finished" to stdout
       this.log(
-        this.getResourceString(RESOURCES.loggerCommandCompletedString, this.commandFullName, String(status), statusString),
-        LOG_MESSAGE_TYPE.STRING,
-        LOG_MESSAGE_VERBOSITY.NORMAL
+        this.getResourceString(
+          RESOURCES.loggerCommandCompletedString,
+          this.commandFullName,
+          String(status),
+          statusString),
+        status == COMMAND_EXIT_STATUSES.SUCCESS ? LOG_MESSAGE_TYPE.STRING : LOG_MESSAGE_TYPE.ERROR,
+        LOG_MESSAGE_VERBOSITY.NONE
       );
 
       // "Time elapsed" to stdout
       this.log(
-        this.getResourceString(RESOURCES.loggerTimeElapsedString, timeElapsedString),
+        this.getResourceString(
+          RESOURCES.loggerTimeElapsedString,
+          timeElapsedString),
         LOG_MESSAGE_TYPE.STRING,
-        LOG_MESSAGE_VERBOSITY.NORMAL
+        LOG_MESSAGE_VERBOSITY.NONE
       );
 
     }
@@ -1070,64 +888,40 @@ export class Logger implements IAppLogger {
 export enum LOG_MESSAGE_TYPE {
 
   /**
-   * Info string to stdout (including date on --verbose)
+   * Info string with date
    */
   STRING,
 
   /**
-   * Error string to stderr (including date on --verbose)
-   * Always is sent, even when --quite.
+   * Error string. Always is sent, even when --quite.
    */
   ERROR,
 
   /**
-   * Warn string to stderr (including date on --verbose)
-   * Always is sent, even when --quite.
+   * Warn string. Always is sent, even when --quite.
    */
   WARN,
 
   /**
-   * Formatted table to stdout (without date)
+   * Formatted table without date
    */
   TABLE,
 
   /**
-   * Formatted json to stdout (without date)
+   * Formatted json without date
    */
   JSON,
 
   /**
-   * Formatted object to stdout (without date)
+   * Formatted object without date
    */
   OBJECT,
 
   /**
-   * Formatted header to stdout (without date)
+   * Formatted header without date
    */
-  HEADER,
+  HEADER
 
-  /**
-   * * Formatted json to stdout (without date)
-   *   Always is sent, even when --quite.
-   */
-  IMPORTANT_JSON,
-
-  /**
-   * * Info string to stdout (including date on --verbose)
-   *   Always is sent, even when --quite.
-   */
-  IMPORTANT_STRING,
-
-  /**
-   * * Formatted object to stdout (without date)
-   *   Always is sent, even when --quite.
-   */
-  IMPORTANT_OBJECT,
-
-  /**
-   * MEssage to be printed only to the file log
-   */
-  FILE_LOG_ONLY
 }
 
 /**
@@ -1138,7 +932,7 @@ export enum LOG_MESSAGE_TYPE {
  */
 export enum LOG_MESSAGE_VERBOSITY {
 
-  /** Message not to display */
+  /** Message not to display / always */
   NONE = 0,
 
   /** Minimal verbosity message */

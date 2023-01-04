@@ -36,14 +36,12 @@
     "enterTextPromptMessageFormat": "%s ?",
     "defaultPromptOptionFormat": "%s",
 
-    "loggerInfoString": "%s",
+
     "loggerInfoStringWithDate": "[%s] %s",
-    "loggerWarnString": "[WARN] %s",
+
     "loggerWarnStringWithDate": "[%s] [WARN] %s",
-    "loggerErrorString": "[ERROR] %s",
+
     "loggerErrorStringWithDate": "[%s] [ERROR] %s",
-    "loggerImportantInfoString": "%s",
-    "loggerImportantInfoStringWithDate": "[%s] %s",
 
     "loggerStackTraceString": "[STACK TRACE] %s",
     "loggerTimeElapsedString": "Total time elapsed: %s.",
