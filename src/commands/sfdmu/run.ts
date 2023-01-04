@@ -90,7 +90,8 @@ export default class Run extends SfdxCommand implements IRunProcess {
     filelog: flags.boolean({
       char: "l",
       description: commandMessages.getMessage("filelogFlagDescription"),
-      longDescription: commandMessages.getMessage("filelogFlagLongDescription")
+      longDescription: commandMessages.getMessage("filelogFlagLongDescription"),
+      default: true
     }),
     noprompt: flags.boolean({
       char: "n",

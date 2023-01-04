@@ -78,7 +78,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
   importCSVFilesAsIs: boolean = false;
   alwaysUseRestApiToUpdateRecords: boolean = false;
   excludeIdsFromCSVFiles: boolean = false;
-  fileLog: boolean = true;
+  //fileLog: boolean = true;
   keepObjectOrderWhileExecute: boolean = false;
   allowFieldTruncation: boolean = false;
   simulationMode: boolean = false;
@@ -219,7 +219,6 @@ export default class Script implements IAppScript, ISfdmuRunScript {
     // Initialize script
     this.logger = logger;
     this.basePath = basePath;
-    this.logger.fileLogger.enabled = this.logger.fileLogger.enabled || this.fileLog;
     this.canModify = canModify || "";
     this.simulationMode = this.simulationMode || simulation;
 

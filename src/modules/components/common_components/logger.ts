@@ -60,7 +60,8 @@ export enum RESOURCES {
   defaultPromptNopromptOption = "defaultPromptNopromptOption",
   defaultPromptSelectedOption = "defaultPromptSelectedOption",
   promptMessageFormat = "promptMessageFormat",
-  promptDefaultOptionFormat = "promptDefaultOptionFormat",
+  enterTextPromptMessageFormat = "enterTextPromptMessageFormat",
+  defaultPromptOptionFormat = "defaultPromptOptionFormat",
 
   loggerInfoString = "loggerInfoString",
   loggerInfoStringWithDate = "loggerInfoStringWithDate",
@@ -79,9 +80,6 @@ export enum RESOURCES {
   fileLoggerInfoString = "fileLoggerInfoString",
   fileLoggerWarnSring = "fileLoggerWarnSring",
   fileLoggerErrorSring = "fileLoggerErrorSring",
-  fileLoggerInfoStringWithoutDate = "fileLoggerInfoStringWithoutDate",
-  fileLoggerWarnSringWithoutDate = "fileLoggerWarnSringWithoutDate",
-  fileLoggerErrorSringWithoutDate = "fileLoggerErrorSringWithoutDate",
 
   successfullyCompletedResult = "successfullyCompletedResult",
   commandInitializationErrorResult = "commandInitializationErrorResult",
@@ -286,14 +284,8 @@ class FileLogger {
   log(message: string) {
     if (this.enabled) {
       message = message || "";
-      const d = Common.formatDateTimeShort(new Date());
-      let m: string;
-      if (message.trim()) {
-        m = this.resources.getMessage(RESOURCES.fileLoggerInfoString, [d, message]);
-      } else {
-        m = this.resources.getMessage(RESOURCES.fileLoggerInfoStringWithoutDate, [message]);
-      }
-      fs.appendFileSync(this.fileName, m);
+      const date = Common.formatDateTimeShort(new Date());
+      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerInfoString, [date, message]) : '\n');
     }
   }
 
@@ -306,14 +298,8 @@ class FileLogger {
   warn(message: string) {
     if (this.enabled) {
       message = message || "";
-      const d = Common.formatDateTimeShort(new Date());
-      let m: string;
-      if (message.trim()) {
-        m = this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [d, message]);
-      } else {
-        m = this.resources.getMessage(RESOURCES.fileLoggerWarnSringWithoutDate, [message]);
-      }
-      fs.appendFileSync(this.fileName, m);
+      const date = Common.formatDateTimeShort(new Date());
+      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [date, message]) : '\n');
     }
   }
 
@@ -326,14 +312,8 @@ class FileLogger {
   error(message: string) {
     if (this.enabled) {
       message = message || "";
-      const d = Common.formatDateTimeShort(new Date());
-      let m: string;
-      if (message.trim()) {
-        m = this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [d, message]);
-      } else {
-        m = this.resources.getMessage(RESOURCES.fileLoggerErrorSringWithoutDate, [message]);
-      }
-      fs.appendFileSync(this.fileName, m);
+      const date = Common.formatDateTimeShort(new Date());
+      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [date, message]) : '\n');
     }
   }
 
@@ -348,11 +328,8 @@ class FileLogger {
 export class Logger implements IAppLogger {
 
   commandFullName: string;
-
   jsonFlag: boolean;
-
   startTime: Date;
-
   fileLogger: FileLogger;
 
   resources: IResourceBundle;
@@ -365,7 +342,6 @@ export class Logger implements IAppLogger {
   verboseFlag: boolean;
   noPromptFlag: boolean;
   noWarningsFlag: boolean;
-
 
   /**
    *Creates an instance of MessageUtils.
@@ -469,31 +445,26 @@ export class Logger implements IAppLogger {
   }, ...tokens: string[]
   ): Promise<string> {
 
-    params.options = params.options != "" ? this.getResourceString(RESOURCES.defaultPromptOptions) : params.options;
-
-    params.default = params.default != "" ? this.getResourceString(RESOURCES.defaultPromptSelectedOption) : params.default;
-    params.default = params.default ? String(params.default).trim() : params.default;
-
-    let defaultOption = params.default ? this.getResourceString(RESOURCES.promptDefaultOptionFormat, params.default) : undefined;
-    defaultOption = defaultOption ? String(defaultOption).trim() : defaultOption;
-
-    params.nopromptDefault = params.nopromptDefault != "" ? this.getResourceString(RESOURCES.defaultPromptNopromptOption) : params.nopromptDefault;
-    params.nopromptDefault = params.nopromptDefault ? String(params.nopromptDefault).trim() : params.nopromptDefault;
-
-    params.timeout = params.timeout || CONSTANTS.DEFAULT_USER_PROMPT_TIMEOUT_MS;
-
-    params.message = this.getResourceString.apply(this, [params.message, ...tokens]);
-    params.message = this.getResourceString(RESOURCES.promptMessageFormat, params.message, params.options);
-    if (!params.options) {
-      // Remove parethenesses
-      params.message = params.message.replace(/[\(\)\?]/g, '');
-    }
-    params.message = params.message.trim();
+    params.nopromptDefault = (typeof params.nopromptDefault == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptNopromptOption) : params.nopromptDefault || "").trim();
 
     if (this.uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE || this.noPromptFlag) {
-      // Suppress propmts on --quite or --noprompt, immediately send the default value
       return params.nopromptDefault;
     }
+
+    let date = Common.formatDateTimeShort(new Date());
+    date = this.getResourceString(RESOURCES.loggerInfoStringWithDate, date, ' ');
+
+    params.options = (typeof params.options == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptOptions) : params.options || "").trim();
+    params.default = (typeof params.default == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptSelectedOption) : params.default || "").trim();
+    params.message = date + (this.getResourceString.apply(this, [params.message, ...tokens]) || "").trim();
+    params.timeout = params.timeout || (params.options ? CONSTANTS.DEFAULT_USER_PROMPT_TIMEOUT_MS : CONSTANTS.DEFAULT_USER_PROMT_TEXT_ENTER_TIMEOUT_MS);
+
+    params.message = this.getResourceString(
+      params.options ? RESOURCES.promptMessageFormat : RESOURCES.enterTextPromptMessageFormat,
+      params.message,
+      params.options);
+
+    const defaultOption = params.default ? this.getResourceString(RESOURCES.defaultPromptOptionFormat, params.default).trim() : undefined;
 
     try {
       return await this.uxLogger.prompt(
@@ -528,19 +499,15 @@ export class Logger implements IAppLogger {
    * Outputs prompt to ask user to enter any text.
    *
    * @param {string} message Prompt message to display to the user.
-   * @param {string} [defaultResponse=""] The default response string if the user does not respond within the timeout value.
-   * @param {number} [timeout=6000] Timeout in ms if user does not respond
    * @param {...string[]} tokens Tokens for the command resource
    * @return {*}  {Promise<string>}
    * @memberof Logger
    */
-  async textPromptAsync(message: string, timeout?: number, defaultResponse: string = "", ...tokens: string[]): Promise<string> {
+  async textPromptAsync(message: string, ...tokens: string[]): Promise<string> {
     return (await this.promptAsync.apply(this, [{
-      message,
+      default: "",
       options: "",
-      default: defaultResponse,
-      nopromptDefault: defaultResponse,
-      timeout: timeout || CONSTANTS.DEFAULT_USER_PROMT_TEXT_ENTER_TIMEOUT_MS
+      message
     }, ...tokens]));
   }
 
@@ -585,7 +552,7 @@ export class Logger implements IAppLogger {
 
     // Format the message
     let fileLogMessage: string;
-    let uxLogMessage = <string | object>message;
+    let uxLogMessage = message as string | object;
 
     if ([LOG_MESSAGE_TYPE.IMPORTANT_JSON,
     LOG_MESSAGE_TYPE.JSON,
@@ -906,21 +873,21 @@ export class Logger implements IAppLogger {
 
     this.uxLogger.stopSpinner();
 
-    if (typeof message == "undefined"
-      || message == null) {
+    if (typeof message == "undefined" || message == null) {
       return;
     }
 
-    // Try to fetch message string from the resource
-    let plainMessageString = "";
+    let messageString = "";
 
-    message = this.getResourceString.apply(this, [message, ...tokens]);
-
-    if (typeof message !== "object") {
-      plainMessageString = <string>message;
+    if (typeof message == 'string') {
+      // Try to fetch message string from the resource
+      messageString = this.getResourceString.apply(this, [message, ...tokens]);
     } else {
-      plainMessageString = JSON.stringify(message);
+      // Object
+      messageString = JSON.stringify(message);
     }
+
+    this.log('');
 
     let statusString = COMMAND_EXIT_STATUSES[status].toString();
     let endTime = new Date();
@@ -931,7 +898,7 @@ export class Logger implements IAppLogger {
       if (status == COMMAND_EXIT_STATUSES.SUCCESS) {
         // Success
         // Full success result to stdout
-        this.log(<IExitSuccessMessage>{
+        this.log({
           command: this.commandFullName,
           cliCommandString: Common.getFullCommandLine(),
           endTime: Common.convertUTCDateToLocalDate(endTime),
@@ -942,12 +909,12 @@ export class Logger implements IAppLogger {
           status: status,
           statusString: statusString,
           timeElapsed: timeElapsedString
-        }, LOG_MESSAGE_TYPE.IMPORTANT_JSON);
+        } as IExitSuccessMessage, LOG_MESSAGE_TYPE.IMPORTANT_JSON);
 
       } else {
         // Error
         // Full error resut to stdout
-        this.log(<IExitFailedMessage>{
+        this.log({
           command: this.commandFullName,
           cliCommandString: Common.getFullCommandLine(),
           endTime: Common.convertUTCDateToLocalDate(endTime),
@@ -959,7 +926,7 @@ export class Logger implements IAppLogger {
           status: status,
           statusString: statusString,
           timeElapsedString: timeElapsedString
-        }, LOG_MESSAGE_TYPE.IMPORTANT_JSON);
+        } as IExitFailedMessage, LOG_MESSAGE_TYPE.IMPORTANT_JSON);
       }
 
     } else {
@@ -975,7 +942,7 @@ export class Logger implements IAppLogger {
         } else {
           // Error
           // Error message only to stderr
-          this.log(plainMessageString, LOG_MESSAGE_TYPE.ERROR);
+          this.log(messageString, LOG_MESSAGE_TYPE.ERROR);
           // Stack trace to stdout
           if (stack) {
             if (this.uxLoggerLevel == LoggerLevel.TRACE) {
@@ -1000,7 +967,7 @@ export class Logger implements IAppLogger {
         if (status != COMMAND_EXIT_STATUSES.SUCCESS) {
           // Error
           // Error message only to stderr
-          this.log(plainMessageString, LOG_MESSAGE_TYPE.ERROR);
+          this.log(messageString, LOG_MESSAGE_TYPE.ERROR);
           // Stack trace to stdout
           if (stack) {
             this.log(

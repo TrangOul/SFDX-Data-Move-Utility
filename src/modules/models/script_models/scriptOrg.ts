@@ -128,7 +128,7 @@ export default class ScriptOrg implements IAppScriptOrg, ISfdmuRunCustomAddonScr
     ) {
       // Prompt the user to allow production modifications
       let promptMessage = this.script.logger.getResourceString(RESOURCES.productionModificationApprovalPrompt, domain);
-      let response = (await this.script.logger.textPromptAsync(promptMessage, null, '')).toLowerCase();
+      let response = (await this.script.logger.textPromptAsync(promptMessage)).toLowerCase();
       if (response != domain) {
         // Abort the job
         throw new CommandAbortedByUserError(this.script.logger.getResourceString(RESOURCES.actionIsNotPermitted));
