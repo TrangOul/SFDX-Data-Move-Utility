@@ -36,21 +36,21 @@
     "enterTextPromptMessageFormat": "%s ?",
     "defaultPromptOptionFormat": "%s",
 
+    "loggerDateFormat": "[%s]",
+    "loggerInfoString": "%s %s",
 
-    "loggerInfoStringWithDate": "[%s] %s",
+    "loggerWarnString": "%s [WARN] %s",
 
-    "loggerWarnStringWithDate": "[%s] [WARN] %s",
-
-    "loggerErrorStringWithDate": "[%s] [ERROR] %s",
+    "loggerErrorString": "%s [ERROR] %s",
 
     "loggerStackTraceString": "[STACK TRACE] %s",
     "loggerTimeElapsedString": "Total time elapsed: %s.",
     "loggerCommandStartedString": "Execution of the command %s has been started.",
     "loggerCommandCompletedString": "Execution of the command %s has been finished. Exit code %s (%s).",
 
-    "fileLoggerInfoString": "\n[%s] %s",
-    "fileLoggerWarnSring": "\n[%s][WARN] %s",
-    "fileLoggerErrorSring": "\n[%s][ERROR] %s",
+    "fileLoggerInfoString": "\n%s %s",
+    "fileLoggerWarnSring": "\n%s [WARN] %s",
+    "fileLoggerErrorSring": "\n%s [ERROR] %s",
 
     "successfullyCompletedResult": "Command succeeded.",
     "commandInitializationErrorResult": "Command initialization error: %s.",

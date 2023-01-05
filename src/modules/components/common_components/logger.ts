@@ -56,12 +56,12 @@ export enum RESOURCES {
   enterTextPromptMessageFormat = "enterTextPromptMessageFormat",
   defaultPromptOptionFormat = "defaultPromptOptionFormat",
 
+  loggerDateFormat = "loggerDateFormat",
+  loggerInfoString = "loggerInfoString",
 
-  loggerInfoStringWithDate = "loggerInfoStringWithDate",
+  loggerWarnString = "loggerWarnString",
 
-  loggerWarnStringWithDate = "loggerWarnStringWithDate",
-
-  loggerErrorStringWithDate = "loggerErrorStringWithDate",
+  loggerErrorString = "loggerErrorString",
 
   loggerStackTraceString = "loggerStackTraceString",
   loggerTimeElapsedString = "loggerTimeElapsedString",
@@ -254,24 +254,24 @@ class FileLogger {
   log(message: string, omitDate?: boolean) {
     if (this.enabled) {
       message = message || "";
-      const date = !omitDate && Common.formatDateTimeShort(new Date()) || '';
-      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerInfoString, [date, message]) : '\n');
+      const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
+      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerInfoString, [date, message]).trim() : '\n');
     }
   }
 
   warn(message: string, omitDate?: boolean) {
     if (this.enabled) {
       message = message || "";
-      const date = !omitDate && Common.formatDateTimeShort(new Date()) || '';
-      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [date, message]) : '\n');
+      const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
+      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [date, message]).trim() : '\n');
     }
   }
 
   error(message: string, omitDate?: boolean) {
     if (this.enabled) {
       message = message || "";
-      const date = !omitDate && Common.formatDateTimeShort(new Date()) || '';
-      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [date, message]) : '\n');
+      const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
+      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [date, message]).trim() : '\n');
     }
   }
 
@@ -295,7 +295,7 @@ export class Logger implements IAppLogger {
   private _noPromptFlag: boolean;
   private _spinnerIsStarted = false;
 
-  private _messages: string[] = [];
+  private _messageCache: string[] = [];
 
 
   constructor(
@@ -376,8 +376,7 @@ export class Logger implements IAppLogger {
       return params.nopromptDefault;
     }
 
-    let date = Common.formatDateTimeShort(new Date());
-    date = this.getResourceString(RESOURCES.loggerInfoStringWithDate, date, ' ');
+    const date = this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date()));
 
     params.options = (typeof params.options == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptOptions) : params.options || "").trim();
     params.default = (typeof params.default == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptSelectedOption) : params.default || "").trim();
@@ -431,11 +430,6 @@ export class Logger implements IAppLogger {
     ...tokens: string[]
   ): void {
 
-    const pushToCache = (logMessage) => {
-      if (type != LOG_MESSAGE_TYPE.JSON) {
-        this._messages.push(logMessage);
-      }
-    };
 
     type = type || LOG_MESSAGE_TYPE.STRING;
     verbosity = typeof verbosity == 'undefined' ? LOG_MESSAGE_VERBOSITY.NORMAL : verbosity;
@@ -445,15 +439,17 @@ export class Logger implements IAppLogger {
     }
     message = this.getResourceString.apply(this, [message, ...tokens]) || '';
 
-    let allowWriteLogs = true;
-    let allowWriteLogsToSTdOut = !(this._jsonFlag && type != LOG_MESSAGE_TYPE.JSON);
+    let allowWriteLogsToCache = true;
+    const allowWriteLogsToSTdOut = !(this._jsonFlag && type != LOG_MESSAGE_TYPE.JSON);
+    const allowWriteLogsToFile = !this._jsonFlag || (this._jsonFlag && type == LOG_MESSAGE_TYPE.JSON);
+    const omitDateWhenWriteLogsToFile = this._jsonFlag && type == LOG_MESSAGE_TYPE.JSON;
 
     if ((this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE
       || this._uxLoggerVerbosity < verbosity
       || type < this._uxLoggerLevel)
       && verbosity != LOG_MESSAGE_VERBOSITY.NONE
     ) {
-      allowWriteLogs = false;
+      allowWriteLogsToCache = false;
     }
 
 
@@ -462,29 +458,29 @@ export class Logger implements IAppLogger {
 
     if (!message) {
       logMessage = '\n';
-      allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.log('');
+      allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log('');
     } else {
 
       switch (type) {
 
         default:
-          logMessage = this.getResourceString(RESOURCES.loggerInfoStringWithDate, dateString, message as string);
-          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+          logMessage = this.getResourceString(RESOURCES.loggerInfoString, dateString, message as string);
+          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
           break;
 
         case LOG_MESSAGE_TYPE.ERROR:
-          logMessage = this.getResourceString(RESOURCES.loggerErrorStringWithDate, dateString, message as string);
-          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+          logMessage = this.getResourceString(RESOURCES.loggerErrorString, dateString, message as string);
+          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
           break;
 
         case LOG_MESSAGE_TYPE.WARN:
-          logMessage = this.getResourceString(RESOURCES.loggerWarnStringWithDate, dateString, message as string);
-          (allowWriteLogs = allowWriteLogs && !this._noWarningsFlag) && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+          logMessage = this.getResourceString(RESOURCES.loggerWarnString, dateString, message as string);
+          (allowWriteLogsToCache = allowWriteLogsToCache && !this._noWarningsFlag) && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
           break;
 
         case LOG_MESSAGE_TYPE.TABLE:
           logMessage = String(message);
-          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.table((message as ITableMessage).tableBody, {
+          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.table((message as ITableMessage).tableBody, {
             columns: (message as ITableMessage).tableColumns
           });
           break;
@@ -492,23 +488,24 @@ export class Logger implements IAppLogger {
         case LOG_MESSAGE_TYPE.JSON:
           logMessage = JSON.stringify(message, null, 3);
           this._uxLogger.styledJSON(message);
+          allowWriteLogsToCache = false;
           break;
 
         case LOG_MESSAGE_TYPE.OBJECT:
           logMessage = JSON.stringify(message, null, 3);
-          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.styledObject(message);
+          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.styledObject(message);
           break;
 
         case LOG_MESSAGE_TYPE.HEADER:
           logMessage = String(message).toUpperCase();
-          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.styledHeader(message);
+          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.styledHeader(message);
           break;
 
       }
     }
 
-    this._fileLogger.log(logMessage);
-    (allowWriteLogs && type != LOG_MESSAGE_TYPE.JSON) && pushToCache(logMessage);
+    allowWriteLogsToFile && this._fileLogger.log(logMessage, omitDateWhenWriteLogsToFile);
+    allowWriteLogsToCache && this._messageCache.push(logMessage);
 
   }
 
@@ -576,14 +573,14 @@ export class Logger implements IAppLogger {
     let timeElapsedString = Common.timeDiffString(this._startTime, endTime);
 
     if (this._jsonFlag) {
-      // As JSON
+      // Summarized command result as JSON to stdout
       this.log({
         command: this._commandFullName,
         cliCommandString: Common.getFullCommandLine(),
         endTime: Common.convertUTCDateToLocalDate(endTime),
         endTimeUTC: endTime,
         message: message,
-        fullLog: this._messages,
+        fullLog: this._messageCache,
         stack: stack,
         startTime: Common.convertUTCDateToLocalDate(this._startTime),
         startTimeUTC: this._startTime,
@@ -597,13 +594,13 @@ export class Logger implements IAppLogger {
 
     } else {
 
-      // As STRING
+      // Command result as string to stdout
       this.log(String(message),
         LOG_MESSAGE_TYPE.STRING,
         LOG_MESSAGE_VERBOSITY.NONE,
         ...tokens);
 
-      // "Command finished" to stdout
+      // "Command finished" as string to stdout
       this.log(
         this.getResourceString(
           RESOURCES.loggerCommandCompletedString,
@@ -614,7 +611,7 @@ export class Logger implements IAppLogger {
         LOG_MESSAGE_VERBOSITY.NONE
       );
 
-      // "Time elapsed" to stdout
+      // "Time elapsed" as string to stdout
       this.log(
         this.getResourceString(
           RESOURCES.loggerTimeElapsedString,
