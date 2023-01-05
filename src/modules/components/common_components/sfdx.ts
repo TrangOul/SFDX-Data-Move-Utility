@@ -98,7 +98,7 @@ export class Sfdx implements IAppSfdxService, IFieldMapping {
             if (records.length >= nextProgressInfoAtRecord) {
               nextProgressInfoAtRecord += CONSTANTS.QUERY_PROGRESS_MESSAGE_PER_RECORDS;
               lastProgressMessageAt = records.length + 1;
-              self.logger.infoNormal(RESOURCES.apiCallProgress, String(lastProgressMessageAt));
+              self.logger.infoVerbose(RESOURCES.apiCallProgress, String(lastProgressMessageAt));
             }
             records.push(record);
           }).on("end", function () {
@@ -119,7 +119,7 @@ export class Sfdx implements IAppSfdxService, IFieldMapping {
               if (records.length >= nextProgressInfoAtRecord) {
                 nextProgressInfoAtRecord += CONSTANTS.QUERY_PROGRESS_MESSAGE_PER_RECORDS;
                 lastProgressMessageAt = records.length + 1;
-                self.logger.infoNormal(RESOURCES.apiCallProgress, String(lastProgressMessageAt));
+                self.logger.infoVerbose(RESOURCES.apiCallProgress, String(lastProgressMessageAt));
               }
               records.push(record);
             }).on("end", function () {
@@ -140,7 +140,7 @@ export class Sfdx implements IAppSfdxService, IFieldMapping {
 
         function ___outputProgress() {
           if (lastProgressMessageAt != records.length && records.length >= firstProgressMessageAt) {
-            self.logger.infoNormal(RESOURCES.apiCallProgress, String(records.length));
+            self.logger.infoVerbose(RESOURCES.apiCallProgress, String(records.length));
           }
 
         }
@@ -219,7 +219,7 @@ export class Sfdx implements IAppSfdxService, IFieldMapping {
         if (fs.existsSync(cacheFullFilename)) {
           let data = fs.readFileSync(cacheFullFilename, 'utf-8');
           try {
-            self.logger.infoNormal(RESOURCES.readingFromCacheFile, sObject, messageCacheFilename);
+            self.logger.infoVerbose(RESOURCES.readingFromCacheFile, sObject, messageCacheFilename);
             return (JSON.parse(data) as ICachedRecords).records;
           } catch (e) { }
         }
@@ -243,7 +243,7 @@ export class Sfdx implements IAppSfdxService, IFieldMapping {
           records
         } as ICachedRecords);
         try {
-          self.logger.infoNormal(RESOURCES.writingToCacheFile, sObject, messageCacheFilename);
+          self.logger.infoVerbose(RESOURCES.writingToCacheFile, sObject, messageCacheFilename);
           fs.writeFileSync(cacheFullFilename, data, 'utf-8');
         } catch (e) { }
       }
@@ -647,7 +647,7 @@ export class Sfdx implements IAppSfdxService, IFieldMapping {
           if (self.org.script.binaryDataCache == DATA_CACHE_TYPES.FileCache
             || self.org.script.binaryDataCache == DATA_CACHE_TYPES.CleanFileCache) {
             // write to cache
-            self.logger.infoNormal(RESOURCES.writingToCacheFile,
+            self.logger.infoVerbose(RESOURCES.writingToCacheFile,
               blobField.objectName,
               path.join('./' + CONSTANTS.BINARY_CACHE_SUB_DIRECTORY, cacheFilename));
             fs.writeFileSync(cacheFullFilename, data, 'utf-8');

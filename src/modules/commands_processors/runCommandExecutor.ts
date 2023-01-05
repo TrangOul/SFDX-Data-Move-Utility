@@ -29,7 +29,7 @@ export default class RunCommandExecutor {
 
         runProcess.m_flags.verbose = runProcess.m_flags.verbose && !runProcess.m_flags.json;
         runProcess.m_flags.quiet = runProcess.m_flags.quiet || runProcess.m_flags.silent || runProcess.m_flags.version;
-        runProcess.m_flags.filelog = runProcess.m_flags.filelog && !runProcess.m_flags.version;
+        runProcess.m_flags.filelog = !!runProcess.m_flags.filelog && !runProcess.m_flags.version;
 
         runProcess.cmd = {
             statics: runProcess["statics"],
@@ -59,7 +59,7 @@ export default class RunCommandExecutor {
             if (runProcess.m_flags.version) {
 
                 // Exit - success
-                Common.logger.commandExitMessage(
+                Common.logger.commandFinishMessage(
                     RESOURCES.pluginVersion,
                     COMMAND_EXIT_STATUSES.SUCCESS,
                     undefined,
@@ -107,7 +107,7 @@ export default class RunCommandExecutor {
             }
 
             // Exit - success
-            Common.logger.commandExitMessage(
+            Common.logger.commandFinishMessage(
                 commandResult || RESOURCES.successfullyCompletedResult,
                 COMMAND_EXIT_STATUSES.SUCCESS);
 
@@ -120,14 +120,14 @@ export default class RunCommandExecutor {
             switch (e.constructor) {
 
                 case SuccessExit:
-                    Common.logger.commandExitMessage(
+                    Common.logger.commandFinishMessage(
                         RESOURCES.successfullyCompletedResult,
                         COMMAND_EXIT_STATUSES.SUCCESS);
                     runProcess.exitProcess && process.exit(COMMAND_EXIT_STATUSES.SUCCESS);
 
 
                 case CommandInitializationError:
-                    Common.logger.commandExitMessage(
+                    Common.logger.commandFinishMessage(
                         RESOURCES.commandInitializationErrorResult,
                         COMMAND_EXIT_STATUSES.COMMAND_INITIALIZATION_ERROR,
                         e.stack, e.message);
@@ -135,7 +135,7 @@ export default class RunCommandExecutor {
 
 
                 case OrgMetadataError:
-                    Common.logger.commandExitMessage(
+                    Common.logger.commandFinishMessage(
                         RESOURCES.orgMetadataErrorResult,
                         COMMAND_EXIT_STATUSES.ORG_METADATA_ERROR,
                         e.stack, e.message);
@@ -143,7 +143,7 @@ export default class RunCommandExecutor {
 
 
                 case CommandExecutionError:
-                    Common.logger.commandExitMessage(
+                    Common.logger.commandFinishMessage(
                         RESOURCES.commandExecutionErrorResult,
                         COMMAND_EXIT_STATUSES.COMMAND_EXECUTION_ERROR,
                         e.stack, e.message);
@@ -151,21 +151,21 @@ export default class RunCommandExecutor {
 
 
                 case UnresolvableWarning:
-                    Common.logger.commandExitMessage(
+                    Common.logger.commandFinishMessage(
                         RESOURCES.commandUnresolvableWarningResult,
                         COMMAND_EXIT_STATUSES.UNRESOLWABLE_WARNING, e.message);
                     runProcess.exitProcess && process.exit(COMMAND_EXIT_STATUSES.UNRESOLWABLE_WARNING);
 
 
                 case CommandAbortedByUserError:
-                    Common.logger.commandExitMessage(
+                    Common.logger.commandFinishMessage(
                         RESOURCES.commandAbortedByUserErrorResult,
                         COMMAND_EXIT_STATUSES.COMMAND_ABORTED_BY_USER,
                         e.stack, e.message);
                     runProcess.exitProcess && process.exit(COMMAND_EXIT_STATUSES.COMMAND_ABORTED_BY_USER);
 
                 case CommandAbortedByAddOnError:
-                    Common.logger.commandExitMessage(
+                    Common.logger.commandFinishMessage(
                         RESOURCES.commandAbortedByAddOnErrorResult,
                         COMMAND_EXIT_STATUSES.COMMAND_ABORTED_BY_ADDON,
                         e.stack, e.message);
@@ -173,7 +173,7 @@ export default class RunCommandExecutor {
 
 
                 default:
-                    Common.logger.commandExitMessage(
+                    Common.logger.commandFinishMessage(
                         RESOURCES.commandUnexpectedErrorResult,
                         COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR,
                         e.stack, e.message);

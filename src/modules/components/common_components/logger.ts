@@ -16,14 +16,7 @@ import ISfdmuCommand from '../../models/common_models/ISfdxCommand';
 import { IAppLogger } from '../../app/appModels';
 
 
-/**
- * Tokens from the common.json resource file.
- * The shared tokens are being used by all commands of the plugin
- * (the sfdmu:run command and every additional commands as well)
- *
- * @export
- * @enum {number}
- */
+
 export enum RESOURCES {
 
   newLine = "newLine",
@@ -243,27 +236,12 @@ export enum RESOURCES {
   readingFromCacheFile = "readingFromCacheFile"
 }
 
-
-
-
-/**
- * Class to manage file logs
- *
- * @class FileLogger
- */
 class FileLogger {
 
   fileName: string;
   enabled: boolean;
   resources: IResourceBundle;
 
-  /**
-   *Creates an instance of FileLogger.
-   * @param {string} filePath Path to put log file there
-   * @param {string} fileName Name of the log file without path
-   * @param {boolean} enabled Enable/Disable the logging
-   * @memberof FileLogger
-   */
   constructor(resources: IResourceBundle, filePath: string, fileName: string, enabled: boolean) {
     this.enabled = enabled;
     this.resources = resources;
@@ -273,88 +251,53 @@ class FileLogger {
     this.fileName = path.join(filePath, fileName);
   }
 
-  /**
-   * Writes INFO message into log file
-   *
-   * @param {string} message
-   * @memberof FileLogger
-   */
-  log(message: string) {
+  log(message: string, omitDate?: boolean) {
     if (this.enabled) {
       message = message || "";
-      const date = Common.formatDateTimeShort(new Date());
+      const date = !omitDate && Common.formatDateTimeShort(new Date()) || '';
       fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerInfoString, [date, message]) : '\n');
     }
   }
 
-  /**
-   * Writes WARN message into log file
-   *
-   * @param {string} message
-   * @memberof FileLogger
-   */
-  warn(message: string) {
+  warn(message: string, omitDate?: boolean) {
     if (this.enabled) {
       message = message || "";
-      const date = Common.formatDateTimeShort(new Date());
+      const date = !omitDate && Common.formatDateTimeShort(new Date()) || '';
       fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [date, message]) : '\n');
     }
   }
 
-  /**
-   * Writes ERROR message into log file
-   *
-   * @param {string} message
-   * @memberof FileLogger
-   */
-  error(message: string) {
+  error(message: string, omitDate?: boolean) {
     if (this.enabled) {
       message = message || "";
-      const date = Common.formatDateTimeShort(new Date());
+      const date = !omitDate && Common.formatDateTimeShort(new Date()) || '';
       fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [date, message]) : '\n');
     }
   }
 
 }
 
-/**
- * Class to manage logs
- *
- * @export
- * @class MessageUtils
- */
 export class Logger implements IAppLogger {
 
-  commandFullName: string;
-  jsonFlag: boolean;
-  startTime: Date;
-  fileLogger: FileLogger;
+  private _commandFullName: string;
+  private _jsonFlag: boolean;
+  private _startTime: Date;
+  private _fileLogger: FileLogger;
+  private _noWarningsFlag: boolean;
 
-  resources: IResourceBundle;
-  commandMessages: IResourceBundle;
+  private _resources: IResourceBundle;
+  private _commandMessages: IResourceBundle;
 
-  uxLogger: IUxLogger;
-  uxLoggerLevel: LoggerLevel;
-  uxLoggerVerbosity: LOG_MESSAGE_VERBOSITY
+  private _uxLogger: IUxLogger;
+  private _uxLoggerLevel: LoggerLevel;
+  private _uxLoggerVerbosity: LOG_MESSAGE_VERBOSITY
 
-  verboseFlag: boolean;
-  noPromptFlag: boolean;
-  noWarningsFlag: boolean;
+  private _noPromptFlag: boolean;
+  private _spinnerIsStarted = false;
 
-  /**
-   *Creates an instance of MessageUtils.
-   * @param {IUxLogger} uxLogger Sfdx UX logger instance
-   * @param {string} logLevelFlag --loglevel command flag
-   * @param {string} rootPath The root directory wo write the command log file, the /logs/ subdirectory is actually used
-   * @param {boolean} verboseFlag --verbose command flag
-   * @param {boolean} conciseFlag --concise command flag
-   * @param {boolean} quietFlag --quiet/silence command flag
-   * @param {boolean} jsonFlag --json command flag
-   * @param {boolean} noPromptFlag --noprompt command flag
-   * @param {boolean} noWarningsFlag --nowarnings command flag
-   * @param {boolean} fileLogFlag --filelog command flag
-   * @memberof MessageUtils
-   */
+  private _messages: string[] = [];
+
+
   constructor(
     resources: IResourceBundle,
     commandMessages: IResourceBundle,
@@ -370,70 +313,54 @@ export class Logger implements IAppLogger {
     noWarningsFlag: boolean,
     fileLogFlag: boolean) {
 
-    this.resources = resources;
-    this.commandMessages = commandMessages;
-    this.uxLogger = uxLogger;
+    this._resources = resources;
+    this._commandMessages = commandMessages;
+    this._uxLogger = uxLogger;
 
-    this.jsonFlag = jsonFlag;
-    this.verboseFlag = verboseFlag;
-    this.noPromptFlag = noPromptFlag;
-    this.noWarningsFlag = noWarningsFlag;
+    this._jsonFlag = jsonFlag;
+    this._noPromptFlag = noPromptFlag;
+    this._noWarningsFlag = noWarningsFlag;
 
-    this.startTime = new Date();
+    this._startTime = new Date();
 
     if (quietFlag) {
-      this.uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.NONE;
+      this._uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.NONE;
     } else if (conciseFlag) {
-      this.uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.MINIMAL;
+      this._uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.MINIMAL;
     } else if (verboseFlag) {
-      this.uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.VERBOSE;
+      this._uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.VERBOSE;
     } else {
-      this.uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.NORMAL;
+      this._uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.NORMAL;
     }
 
-    this.uxLoggerLevel = (<any>LoggerLevel)[String(logLevelFlag).toUpperCase()];
-    if (this.uxLoggerLevel == LoggerLevel.DEBUG
-      || this.uxLoggerLevel == LoggerLevel.WARN) {
-      this.uxLoggerLevel = LoggerLevel.INFO;
-    }
-    if (this.uxLoggerLevel == LoggerLevel.FATAL) {
-      this.uxLoggerLevel = LoggerLevel.ERROR;
+    this._uxLoggerLevel = (<any>LoggerLevel)[String(logLevelFlag).toUpperCase()];
+
+    if (this._uxLoggerLevel == LoggerLevel.DEBUG) {
+      this._uxLoggerLevel = LoggerLevel.INFO;
     }
 
+    if (this._uxLoggerLevel == LoggerLevel.FATAL) {
+      this._uxLoggerLevel = LoggerLevel.ERROR;
+    }
 
     if (command) {
       let pinfo = Common.getPluginInfo(command);
-      this.commandFullName = pinfo.pluginName + ":" + pinfo.commandName;
+      this._commandFullName = pinfo.pluginName + ":" + pinfo.commandName;
     } else {
-      this.commandFullName = "unknown";
+      this._commandFullName = "unknown";
     }
 
-    this.fileLogger = new FileLogger(
-      this.resources,
+    this._fileLogger = new FileLogger(
+      this._resources,
       path.join(rootPath, CONSTANTS.FILE_LOG_SUBDIRECTORY),
       `${Common.formatFileDate(new Date())}.${CONSTANTS.FILE_LOG_FILEEXTENSION}`,
       fileLogFlag
     );
 
-    this.commandEnterMessage();
+    this.commandStartMessage();
 
   }
 
-
-
-
-  /**
-   * Prompts the user and returns value entered by the user
-   *
-   * @param {string} message Message to prompt the user
-   * @param {string} [options=getMessage('defaultPromptOptions')]  Options to choose, like 'y/n'
-   * @param {string} [default=getMessage('defaultPromptSelectedOption')]  Default option if nothing entered, like 'n'
-   * @param {string} [nopromptDefault=getMessage('defaultPromptNopromptOption')]  Default option when noprompt flag is set
-   * @param {number} [timeout=6000] Timeout in ms if user does not respond
-   * @param {...string[]} tokens Tokens for the command resource
-   * @returns {Promise<string>}
-   * @memberof MessageUtils
-   */
   async promptAsync(params: {
     message: string,
     options?: string,
@@ -445,7 +372,7 @@ export class Logger implements IAppLogger {
 
     params.nopromptDefault = (typeof params.nopromptDefault == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptNopromptOption) : params.nopromptDefault || "").trim();
 
-    if (this.uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE || this.noPromptFlag) {
+    if (this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE || this._noPromptFlag) {
       return params.nopromptDefault;
     }
 
@@ -463,44 +390,33 @@ export class Logger implements IAppLogger {
       params.options);
 
     const defaultOption = params.default ? this.getResourceString(RESOURCES.defaultPromptOptionFormat, params.default).trim() : undefined;
+    let result = params.default;
 
     try {
-      return await this.uxLogger.prompt(
+
+      result = await this._uxLogger.prompt(
         params.message,
         {
           default: defaultOption,
           timeout: params.timeout
         });
-    } catch (ex) {
-      return params.default;
-    }
+
+      return result;
+
+    } catch (ex) { }
+
+    this.startSpinner()
+
+    return result;
 
   }
 
-  /**
-  * Outputs simple "yes"/"no" prompt.
-  * If user has not responded - the default option ("no") is applied.
-  * When --noprompt flag is set - default "yes" options is applied.
-  *
-  * @param {string} message  Message to prompt the user
-  * @returns {Promise<boolen>} Returns true if user has choosen "yes" (continue job)
-  * @param {...string[]} tokens Tokens for the command resource
-  * @memberof MessageUtils
-  */
   async yesNoPromptAsync(message: string, ...tokens: string[]): Promise<boolean> {
     return (await this.promptAsync.apply(this, [{
       message
     }, ...tokens])) != this.getResourceString(RESOURCES.defaultPromptSelectedOption);
   }
 
-  /**
-   * Outputs prompt to ask user to enter any text.
-   *
-   * @param {string} message Prompt message to display to the user.
-   * @param {...string[]} tokens Tokens for the command resource
-   * @return {*}  {Promise<string>}
-   * @memberof Logger
-   */
   async textPromptAsync(message: string, ...tokens: string[]): Promise<string> {
     return (await this.promptAsync.apply(this, [{
       default: "",
@@ -509,249 +425,145 @@ export class Logger implements IAppLogger {
     }, ...tokens]));
   }
 
-  /**
-   * Outputs message to sfdx ux and to the log file
-   *
-   * @param {(string | object | ITableMessage)} message Message to output
-   * @param {LOG_MESSAGE_TYPE} [type] The type of the message (Default to STRING)
-   * @param {LOG_MESSAGE_VERBOSITY} [verbosity] The verbosity type of the message (Default to NORMAL)
-   * @param {...string[]} tokens Tokens for the command resource
-   * @returns {void}
-   * @memberof MessageUtils
-   */
   log(message: string | object | ITableMessage,
     type?: LOG_MESSAGE_TYPE,
     verbosity?: LOG_MESSAGE_VERBOSITY,
     ...tokens: string[]
   ): void {
 
-    type = type || LOG_MESSAGE_TYPE.STRING;
-    verbosity = verbosity || LOG_MESSAGE_VERBOSITY.NORMAL;
+    const pushToCache = (logMessage) => {
+      if (type != LOG_MESSAGE_TYPE.JSON) {
+        this._messages.push(logMessage);
+      }
+    };
 
-    if (typeof message == "undefined"
-      || message == null) {
+    type = type || LOG_MESSAGE_TYPE.STRING;
+    verbosity = typeof verbosity == 'undefined' ? LOG_MESSAGE_VERBOSITY.NORMAL : verbosity;
+
+    if (typeof message == "undefined" || message == null) {
       return;
     }
-
-    // Try to fetch message string from the resource
     message = this.getResourceString.apply(this, [message, ...tokens]) || '';
 
-    // Check verbosity
-    let allowUxOutput = true;
-    // Warning and error are always to be printed
-    if (type != LOG_MESSAGE_TYPE.ERROR && this.uxLoggerVerbosity < verbosity) {
-      allowUxOutput = false;
+    let allowWriteLogs = true;
+    let allowWriteLogsToSTdOut = !(this._jsonFlag && type != LOG_MESSAGE_TYPE.JSON);
+
+    if ((this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE
+      || this._uxLoggerVerbosity < verbosity
+      || type < this._uxLoggerLevel)
+      && verbosity != LOG_MESSAGE_VERBOSITY.NONE
+    ) {
+      allowWriteLogs = false;
     }
+
 
     let dateString = Common.formatDateTime(new Date());
     let logMessage: string;
 
     if (!message) {
       logMessage = '\n';
-      allowUxOutput && this.uxLogger.log('');
+      allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.log('');
     } else {
 
       switch (type) {
 
         default:
-        case LOG_MESSAGE_TYPE.STRING:
           logMessage = this.getResourceString(RESOURCES.loggerInfoStringWithDate, dateString, message as string);
-          allowUxOutput && this.uxLogger.log(logMessage);
+          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
           break;
 
         case LOG_MESSAGE_TYPE.ERROR:
           logMessage = this.getResourceString(RESOURCES.loggerErrorStringWithDate, dateString, message as string);
-          allowUxOutput && this.uxLogger.log(logMessage);
+          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
           break;
 
         case LOG_MESSAGE_TYPE.WARN:
           logMessage = this.getResourceString(RESOURCES.loggerWarnStringWithDate, dateString, message as string);
-          allowUxOutput && this.uxLogger.log(logMessage);
+          (allowWriteLogs = allowWriteLogs && !this._noWarningsFlag) && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
           break;
 
         case LOG_MESSAGE_TYPE.TABLE:
           logMessage = String(message);
-          allowUxOutput && this.uxLogger.table((message as ITableMessage).tableBody, {
+          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.table((message as ITableMessage).tableBody, {
             columns: (message as ITableMessage).tableColumns
           });
           break;
 
         case LOG_MESSAGE_TYPE.JSON:
-          logMessage = JSON.stringify(message);
-          allowUxOutput && this.uxLogger.styledJSON(message);
+          logMessage = JSON.stringify(message, null, 3);
+          this._uxLogger.styledJSON(message);
           break;
 
         case LOG_MESSAGE_TYPE.OBJECT:
-          logMessage = JSON.stringify(message);
-          allowUxOutput && this.uxLogger.styledObject(message);
+          logMessage = JSON.stringify(message, null, 3);
+          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.styledObject(message);
           break;
 
         case LOG_MESSAGE_TYPE.HEADER:
           logMessage = String(message).toUpperCase();
-          allowUxOutput && this.uxLogger.styledHeader(message);
+          allowWriteLogs && allowWriteLogsToSTdOut && this._uxLogger.styledHeader(message);
           break;
 
       }
     }
 
-    this.fileLogger.log(logMessage);
+    this._fileLogger.log(logMessage);
+    (allowWriteLogs && type != LOG_MESSAGE_TYPE.JSON) && pushToCache(logMessage);
 
   }
 
-  /**
-   * Logs info string message in NORMAL verbosity
-   *
-   * @param {(string | object | ITableMessage)} message
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
   infoNormal(message: string, ...tokens: string[]): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.STRING, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
   }
 
-  /**
-   * Logs info string message in MINIMAL verbosity
-   *
-   * @param {string} message Message to output
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
   infoMinimal(message: string, ...tokens: string[]): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.STRING, LOG_MESSAGE_VERBOSITY.MINIMAL, ...tokens]);
   }
 
-  /**
-   * Logs info string message in VERBOSE verbosity
-   *
-   * @param {string} message Message to output
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
   infoVerbose(message: string, ...tokens: string[]): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.STRING, LOG_MESSAGE_VERBOSITY.VERBOSE, ...tokens]);
   }
 
-  /**
-   * Logs message as styled header  and MINIMAL verbosity
-   *
-   * @param {string} message Message to output
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
   headerMinimal(message: string, ...tokens: string[]): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.MINIMAL, ...tokens]);
   }
 
-  /**
-   * Logs message as styled header  and NORMAL verbosity
-   *
-   * @param {string} message Message to output
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
   headerNormal(message: string, ...tokens: string[]): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
   }
 
-  /**
-   * Logs message as styled object and NORMAL verbosity
-   *
-   * @param {string} message Message to output
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
   objectNormal(message: object): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.OBJECT, LOG_MESSAGE_VERBOSITY.NORMAL]);
   }
 
-  /**
-   * Logs message as styled object and MINIMAL verbosity
-   *
-   * @param {string} message Message to output
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
   objectMinimal(message: object): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.OBJECT, LOG_MESSAGE_VERBOSITY.MINIMAL]);
   }
 
-  /**
-   * Logs warn string message
-   *
-   * @param {string} message Message to output
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
   warn(message: string, ...tokens: string[]): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.WARN, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
   }
 
-  /**
-   * Logs error string message
-   *
-   * @param {string} message Message to output
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
   error(message: string, ...tokens: string[]): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.ERROR, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
   }
 
-  /**
-   * Logs message when command is starting
-   *
-   * @memberof MessageUtils
-   */
-  commandEnterMessage(): void {
-
-    if (this.uxLoggerVerbosity != LOG_MESSAGE_VERBOSITY.VERBOSE) {
-      this.uxLogger.startSpinner(this.getResourceString(RESOURCES.commandInProgress));
-    }
-
+  commandStartMessage(): void {
+    this.startSpinner();
     this.log(
-      this.getResourceString(RESOURCES.loggerCommandStartedString, this.commandFullName),
+      this.getResourceString(RESOURCES.loggerCommandStartedString, this._commandFullName),
       LOG_MESSAGE_TYPE.STRING,
       LOG_MESSAGE_VERBOSITY.NORMAL
     );
   }
 
-  /**
-   * Method to update ux spinner
-   *
-   * @param {string} message Message to set to the spinner
-   * @param {...string[]} tokens
-   * @memberof MessageUtils
-   */
-  spinner(message: string, ...tokens: string[]): void {
-    message = this.getResourceString.apply(this, [message, ...tokens]);
-    if (!message) {
-      this.uxLogger.stopSpinner();
-    } else {
-      this.uxLogger.setSpinnerStatus(message);
-    }
-  }
-
-  /**
-   * Logs result message when command is finishing
-   *
-   * @param {string | object} message Result message as string or as object.
-   *                                  When --json = true the method always prints formatted json.
-   *                                  When --json = false the method prints formatted object or plain text
-   *                                    according to the type of the message object.
-   * @param {COMMAND_EXIT_STATUSES} status Status of the command
-   * @param {string} [stack] Stack trace to output as text along with the string message
-   *                         in case of unknown error or --logLevel = trace.
-   *                         Json output will aways contain stack trace regardless --loglevel value.
-   * @param {...string[]} tokens Tokens for the command resource
-   * @memberof MessageUtils
-   */
-  commandExitMessage(message: string | object,
+  commandFinishMessage(message: string | object,
     status: COMMAND_EXIT_STATUSES,
     stack?: string,
     ...tokens: string[]
   ): void {
 
-    this.uxLogger.stopSpinner();
+    this.stopSpinner();
 
     if (typeof message == "undefined" || message == null) {
       return;
@@ -761,23 +573,24 @@ export class Logger implements IAppLogger {
 
     let statusString = COMMAND_EXIT_STATUSES[status].toString();
     let endTime = new Date();
-    let timeElapsedString = Common.timeDiffString(this.startTime, endTime);
+    let timeElapsedString = Common.timeDiffString(this._startTime, endTime);
 
-    if (this.jsonFlag) {
+    if (this._jsonFlag) {
       // As JSON
       this.log({
-        command: this.commandFullName,
+        command: this._commandFullName,
         cliCommandString: Common.getFullCommandLine(),
         endTime: Common.convertUTCDateToLocalDate(endTime),
         endTimeUTC: endTime,
         message: message,
+        fullLog: this._messages,
         stack: stack,
-        startTime: Common.convertUTCDateToLocalDate(this.startTime),
-        startTimeUTC: this.startTime,
+        startTime: Common.convertUTCDateToLocalDate(this._startTime),
+        startTimeUTC: this._startTime,
         status: status,
         statusString: statusString,
         timeElapsedString: timeElapsedString
-      } as IExitFailedMessage,
+      } as IFinishMessage,
         LOG_MESSAGE_TYPE.JSON,
         LOG_MESSAGE_VERBOSITY.NONE,
         ...tokens);
@@ -794,7 +607,7 @@ export class Logger implements IAppLogger {
       this.log(
         this.getResourceString(
           RESOURCES.loggerCommandCompletedString,
-          this.commandFullName,
+          this._commandFullName,
           String(status),
           statusString),
         status == COMMAND_EXIT_STATUSES.SUCCESS ? LOG_MESSAGE_TYPE.STRING : LOG_MESSAGE_TYPE.ERROR,
@@ -813,24 +626,40 @@ export class Logger implements IAppLogger {
     }
   }
 
-  /**
-   * Try to get string from the plugin resources using input message value as a key.
-   * If resource with given key does not exist returns original input string.
-   *
-   * @private
-   * @param {*} message Message to process
-   * @param {...string[]} tokens Tokens for the command resource
-   * @returns {*}
-   * @memberof MessageUtils
-   */
+
+  spinner(message?: string, ...tokens: string[]): void {
+    message = this.getResourceString.apply(this, [message, ...tokens]);
+    if (!message) {
+      this._spinnerIsStarted = false;
+      this._uxLogger.stopSpinner();
+    } else if (!this._spinnerIsStarted) {
+      this._uxLogger.startSpinner(message);
+      this._spinnerIsStarted = true;
+    } else {
+      this._uxLogger.setSpinnerStatus(message);
+    }
+  }
+
+  startSpinner() {
+    if ((this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE
+      || this._uxLoggerLevel != LoggerLevel.INFO)
+      && !this._jsonFlag) {
+      this.spinner(RESOURCES.commandInProgress);
+    }
+  }
+
+  stopSpinner() {
+    this.spinner();
+  }
+
   getResourceString(message: any, ...tokens: string[]): any {
     if (!message || typeof message != "string") return message;
     try {
-      let mes = this.resources.getMessage(String(message), tokens);
+      let mes = this._resources.getMessage(String(message), tokens);
       return mes;
     } catch (ex) {
       try {
-        let mes = this.commandMessages.getMessage(String(message), tokens);
+        let mes = this._commandMessages.getMessage(String(message), tokens);
         return mes;
       } catch (ex) {
         return message;
@@ -838,112 +667,27 @@ export class Logger implements IAppLogger {
     }
   }
 
-  /**
-   * @static Returns resource string from the Messages framework by the given key
-   *
-   * @param {Messages} messages The instance of Messages
-   * @param {string} key The key of the resource
-   * @param {...string[]} tokens Tokens for the resource
-   * @returns {string}
-   * @memberof MessageUtils
-   */
-  public static getMessagesString(messages: IMessages, key: string, ...tokens: string[]): string {
-    try {
-      return messages.getMessage(String(key), tokens);
-    } catch (ex) {
-      return "";
-    }
-  }
-
-  /**
-   * Gets difference value from the startTime till timeNow in human readable format
-   *
-   * @param {Date} [timeNow] The now time to calculate the diff
-   * @returns {string} String representation of date diff
-   * @memberof MessageUtils
-   */
-  getFormattedElapsedTimeString(timeNow?: Date): string {
-    timeNow = timeNow || new Date();
-    return Common.timeDiffString(this.startTime, timeNow);
-  }
-
-  /**
-   * Returns time when the process was started
-   *
-   * @returns {Date}
-   * @memberof MessageUtils
-   */
   getStartTime(): Date {
-    return this.startTime;
+    return this._startTime;
   }
 
 }
 
-/**
- * Type of message
- *
- * @export
- * @enum {number}
- */
 export enum LOG_MESSAGE_TYPE {
-
-  /**
-   * Info string with date
-   */
-  STRING,
-
-  /**
-   * Error string. Always is sent, even when --quite.
-   */
-  ERROR,
-
-  /**
-   * Warn string. Always is sent, even when --quite.
-   */
-  WARN,
-
-  /**
-   * Formatted table without date
-   */
-  TABLE,
-
-  /**
-   * Formatted json without date
-   */
-  JSON,
-
-  /**
-   * Formatted object without date
-   */
-  OBJECT,
-
-  /**
-   * Formatted header without date
-   */
-  HEADER
-
+  STRING = 30,
+  ERROR = 50,
+  WARN = 40,
+  TABLE = 31,
+  JSON = 32,
+  OBJECT = 33,
+  HEADER = 34
 }
 
-/**
- * The wanted verbosity defined by the command flags or the verbosity of the message
- *
- * @export
- * @enum {number}
- */
 export enum LOG_MESSAGE_VERBOSITY {
-
-  /** Message not to display / always */
   NONE = 0,
-
-  /** Minimal verbosity message */
   MINIMAL = 1,
-
-  /** Normal verboisty message */
   NORMAL = 2,
-
-  /** High verbosity message */
   VERBOSE = 3
-
 }
 
 export enum LoggerLevel {
@@ -954,13 +698,6 @@ export enum LoggerLevel {
   ERROR = 50,
   FATAL = 60
 }
-
-
-/**
- * UX Logger type description
- *
- * @interface ISfdxUxLogger
- */
 export interface IUxLogger {
   log: Function,
   styledJSON: Function,
@@ -976,48 +713,19 @@ export interface IUxLogger {
 }
 
 export declare type Tokens = Array<string | boolean | number | null | undefined>;
-
 export interface IMessages {
   getMessage(key: string, tokens?: Tokens): string;
 }
-
-/**
- * Represents message bundle type
- *
- * @interface IResourceBundle
- */
 export interface IResourceBundle {
   getMessage(key: string, tokens?: any): string;
 }
 
 
-/**
- * Format of output message for successful command result
- *
- * @interface IExitSuccessMessage
- */
-export interface IExitSuccessMessage {
-  command: string,
-  cliCommandString: string,
-  result: string,
-  status: number,
-  statusString: string,
-  startTime: Date,
-  startTimeUTC: Date,
-  endTime: Date,
-  endTimeUTC: Date,
-  timeElapsed: string
-}
-
-/**
- * Format of output message for failed command result
- *
- * @interface IExitFailedMessage
- */
-export interface IExitFailedMessage {
+export interface IFinishMessage {
   command: string,
   cliCommandString: string,
   message: string,
+  fullLog: string[],
   stack: string,
   status: number,
   statusString: string,
@@ -1028,12 +736,6 @@ export interface IExitFailedMessage {
   timeElapsedString: string
 }
 
-/**
- * Exit status codes are passed to the command output
- * when the command completed
- *
- * @enum {number}
- */
 export enum COMMAND_EXIT_STATUSES {
   SUCCESS = 0,
   COMMAND_UNEXPECTED_ERROR = 1,

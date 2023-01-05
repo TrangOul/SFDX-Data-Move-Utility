@@ -358,7 +358,7 @@ export default class ApiEngineBase implements IApiEngine, IFieldMapping, IApiEng
               let cacheFilename = CONSTANTS.BINARY_FILE_CACHE_TEMPLATE(binaryId);
               let fullCacheFilename = path.join(this.binaryCacheDirectory, cacheFilename);
               if (fs.existsSync(fullCacheFilename)) {
-                this.logger.infoNormal(RESOURCES.readingFromCacheFile, this.sObjectName, path.join('./', CONSTANTS.BINARY_CACHE_SUB_DIRECTORY, cacheFilename));
+                this.logger.infoVerbose(RESOURCES.readingFromCacheFile, this.sObjectName, path.join('./', CONSTANTS.BINARY_CACHE_SUB_DIRECTORY, cacheFilename));
                 let blob = fs.readFileSync(fullCacheFilename, 'utf-8');
                 record[field] = blob;
               }

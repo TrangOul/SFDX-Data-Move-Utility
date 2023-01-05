@@ -87,11 +87,11 @@ export default class Run extends SfdxCommand implements IRunProcess {
       description: commandMessages.getMessage("apiversionFlagDescription"),
       longDescription: commandMessages.getMessage("apiversionFlagLongDescription")
     }),
-    filelog: flags.boolean({
+    filelog: flags.integer({
       char: "l",
       description: commandMessages.getMessage("filelogFlagDescription"),
       longDescription: commandMessages.getMessage("filelogFlagLongDescription"),
-      default: true
+      default: 1
     }),
     noprompt: flags.boolean({
       char: "n",
