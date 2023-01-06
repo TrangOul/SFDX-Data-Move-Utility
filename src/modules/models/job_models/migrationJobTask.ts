@@ -1916,22 +1916,33 @@ export default class MigrationJobTask {
   // ----------------------- Private members -------------------------------------------
   private _apiProgressCallback(apiResult: ApiInfo): void {
 
-    let verbosity = LOG_MESSAGE_VERBOSITY.MINIMAL;
+    let verbosity = LOG_MESSAGE_VERBOSITY.VERBOSE;
     let logMessageType = LOG_MESSAGE_TYPE.STRING;
 
     switch (apiResult.messageImportance) {
-      case MESSAGE_IMPORTANCE.Low:
-        verbosity = LOG_MESSAGE_VERBOSITY.VERBOSE;
+
+      case MESSAGE_IMPORTANCE.Silent:
+        verbosity = LOG_MESSAGE_VERBOSITY.NONE;
         break;
+
       case MESSAGE_IMPORTANCE.Normal:
         verbosity = LOG_MESSAGE_VERBOSITY.NORMAL;
         break;
+
+      case MESSAGE_IMPORTANCE.High:
+        verbosity = LOG_MESSAGE_VERBOSITY.MINIMAL;
+        break;
+
       case MESSAGE_IMPORTANCE.Warn:
+        verbosity = LOG_MESSAGE_VERBOSITY.MINIMAL;
         logMessageType = LOG_MESSAGE_TYPE.WARN;
         break;
+
       case MESSAGE_IMPORTANCE.Error:
+        verbosity = LOG_MESSAGE_VERBOSITY.MINIMAL;
         logMessageType = LOG_MESSAGE_TYPE.ERROR;
         break;
+
     }
     switch (apiResult.resultStatus) {
       case RESULT_STATUSES.Information:
@@ -1975,7 +1986,7 @@ export default class MigrationJobTask {
   }
 
   private _apiOperationError(operation: OPERATION) {
-    throw new CommandExecutionError(this.logger.getResourceString(RESOURCES.apiOperationFailed, this.sObjectName, this.apiEngine.getStrOperation()));
+    throw new CommandExecutionError(this.logger.getResourceString(RESOURCES.apiOperationFailed, this.sObjectName, OPERATION[operation] || this.apiEngine.getStrOperation()));
   }
 
   private _createFilteredQueries(queryMode: "forwards" | "backwards" | "target", reversed: boolean, fieldNames?: string[]): Array<string> {
@@ -2028,9 +2039,9 @@ export default class MigrationJobTask {
             //   || field.parentLookupObject.task.sourceData.allRecords && !this.scriptObject.allRecords
             // ) {
 
-           // Caution! Important change!
-           // Now limited queries are constructed for the SOURCE object regardless the retrieve mode (master/slave)
-           //   of the parent object
+            // Caution! Important change!
+            // Now limited queries are constructed for the SOURCE object regardless the retrieve mode (master/slave)
+            //   of the parent object
             if (queryMode != "forwards") {
               //BACKWARDS
               // For backwards => build the query using all the PREVIOUS related tasks by the tasks order

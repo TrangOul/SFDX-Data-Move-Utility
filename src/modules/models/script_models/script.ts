@@ -225,7 +225,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
     // Message about the running version
     this.logger.objectMinimal({ [this.logger.getResourceString(RESOURCES.runningVersion)]: pinfo.version });
     this.logger.objectMinimal({ [this.logger.getResourceString(RESOURCES.runningSfdmuRunAddOnVersion)]: pinfo.runAddOnApiInfo.version });
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
 
     // Create add on manager
     this.runInfo = {
@@ -377,7 +377,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
    */
   async processObjectsMetadataAsync(): Promise<void> {
 
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerMinimal(RESOURCES.gettingOrgMetadata);
 
     // Describe all objects

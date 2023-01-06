@@ -94,6 +94,12 @@ export class RunCommand {
       throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.workingPathDoesNotExist));
     }
 
+    this.logger.infoMinimal('MINIMAL!!!');
+    this.logger.infoNormal('NORMAL!!!');
+    this.logger.infoVerbose('VERBOSE!!!');
+
+    throw new Error('ERROR!');
+
     if (!json) {
 
       this.filePath = path.join(this.basePath, CONSTANTS.SCRIPT_FILE_NAME);
@@ -102,9 +108,8 @@ export class RunCommand {
         throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.packageFileDoesNotExist));
       }
 
-      this.logger.infoMinimal(RESOURCES.newLine);
+      this.logger.infoVerbose(RESOURCES.newLine);
       this.logger.headerMinimal(RESOURCES.loadingPackageFile);
-
 
       try {
         json = fs.readFileSync(this.filePath, 'utf8');
@@ -139,9 +144,9 @@ export class RunCommand {
    */
   async setupObjectSetAsync(objectSetIndex: number) {
 
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerMinimal(RESOURCES.ObjectSetStarted, (objectSetIndex + 1).toString())
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
 
     //Initialize script for multi object set
     this._initScript(objectSetIndex);
@@ -183,7 +188,7 @@ export class RunCommand {
    */
   async createJobAsync(): Promise<void> {
 
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerMinimal(RESOURCES.dataMigrationProcessStarted);
 
     this.logger.infoNormal(RESOURCES.buildingMigrationStaregy);
@@ -231,7 +236,7 @@ export class RunCommand {
     await this.job.retrieveRecordsAsync();
     await this.job.updateRecordsAsync();
 
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
   }
 
   /**
@@ -242,13 +247,13 @@ export class RunCommand {
    * @memberof RunCommand
    */
   async runAddonEventAsync(event: ADDON_EVENTS): Promise<void> {
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerNormal(RESOURCES.processingAddon);
     let processed = await this.script.addonManager.triggerAddonModuleMethodAsync(event);
     if (!processed) {
       this.logger.infoNormal(RESOURCES.nothingToProcess);
     }
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
   }
 
 

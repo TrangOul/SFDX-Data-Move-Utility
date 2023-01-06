@@ -237,11 +237,11 @@ export enum RESOURCES {
 class FileLogger {
 
   fileName: string;
-  enabled: boolean;
+
   resources: IResourceBundle;
 
-  constructor(resources: IResourceBundle, filePath: string, fileName: string, enabled: boolean) {
-    this.enabled = enabled;
+  constructor(resources: IResourceBundle, filePath: string, fileName: string) {
+
     this.resources = resources;
     if (!fs.existsSync(filePath)) {
       fs.mkdirSync(filePath);
@@ -250,27 +250,21 @@ class FileLogger {
   }
 
   log(message: string, omitDate?: boolean) {
-    if (this.enabled) {
-      message = message || "";
-      const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
-      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerInfoString, [date, message]) : '\n');
-    }
+    message = message || "";
+    const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
+    fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerInfoString, [date, message]) : '\n');
   }
 
   warn(message: string, omitDate?: boolean) {
-    if (this.enabled) {
-      message = message || "";
-      const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
-      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [date, message]) : '\n');
-    }
+    message = message || "";
+    const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
+    fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [date, message]) : '\n')
   }
 
   error(message: string, omitDate?: boolean) {
-    if (this.enabled) {
-      message = message || "";
-      const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
-      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [date, message]) : '\n');
-    }
+    message = message || "";
+    const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
+    fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [date, message]) : '\n');
   }
 
 }
@@ -279,9 +273,11 @@ export class Logger implements IAppLogger {
 
   private _commandFullName: string;
   private _jsonFlag: boolean;
+  private _filelogFlag: boolean;
   private _startTime: Date;
   private _fileLogger: FileLogger;
   private _noWarningsFlag: boolean;
+  private _printStackTrace = false;
 
   private _resources: IResourceBundle;
   private _commandMessages: IResourceBundle;
@@ -316,6 +312,7 @@ export class Logger implements IAppLogger {
     this._uxLogger = uxLogger;
 
     this._jsonFlag = jsonFlag;
+    this._filelogFlag = fileLogFlag;
     this._noPromptFlag = noPromptFlag;
     this._noWarningsFlag = noWarningsFlag;
 
@@ -333,7 +330,9 @@ export class Logger implements IAppLogger {
 
     this._uxLoggerLevel = (<any>LoggerLevel)[String(logLevelFlag).toUpperCase()];
 
-    if (this._uxLoggerLevel == LoggerLevel.DEBUG) {
+    if (this._uxLoggerLevel == LoggerLevel.DEBUG
+      || this._uxLoggerLevel == LoggerLevel.TRACE) {
+      this._printStackTrace = this._uxLoggerLevel == LoggerLevel.TRACE
       this._uxLoggerLevel = LoggerLevel.INFO;
     }
 
@@ -351,84 +350,116 @@ export class Logger implements IAppLogger {
     this._fileLogger = new FileLogger(
       this._resources,
       path.join(rootPath, CONSTANTS.FILE_LOG_SUBDIRECTORY),
-      `${Common.formatFileDate(new Date())}.${CONSTANTS.FILE_LOG_FILEEXTENSION}`,
-      fileLogFlag
+      `${Common.formatFileDate(new Date())}.${CONSTANTS.FILE_LOG_FILEEXTENSION}`
     );
 
     this.commandStartMessage();
 
   }
 
-  async promptAsync(params: {
-    message: string,
-    options?: string,
-    default?: string,
-    nopromptDefault?: string,
-    timeout?: number
-  }, ...tokens: string[]
-  ): Promise<string> {
 
-    params.nopromptDefault = (typeof params.nopromptDefault == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptNopromptOption) : params.nopromptDefault || "").trim();
+  // ------ Start/Stop --------//
+  // ----------------------//
+  commandStartMessage(): void {
+    this.startSpinner();
+    this.log(
+      this.getResourceString(RESOURCES.loggerCommandStartedString, this._commandFullName),
+      LOG_MESSAGE_TYPE.STRING,
+      LOG_MESSAGE_VERBOSITY.MINIMAL
+    );
+  }
 
-    if (this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE || this._noPromptFlag) {
-      return params.nopromptDefault;
+  commandFinishMessage(message: string | object,
+    status: COMMAND_EXIT_STATUSES,
+    stack?: string,
+    ...tokens: string[]
+  ): void {
+
+    this.stopSpinner();
+
+    if (typeof message == "undefined" || message == null) {
+      return;
     }
 
-    const date = this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date()));
+    this.log('');
 
-    params.options = (typeof params.options == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptOptions) : params.options || "").trim();
-    params.default = (typeof params.default == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptSelectedOption) : params.default || "").trim();
-    params.message = date + (this.getResourceString.apply(this, [params.message, ...tokens]) || "").trim();
-    params.timeout = params.timeout || (params.options ? CONSTANTS.DEFAULT_USER_PROMPT_TIMEOUT_MS : CONSTANTS.DEFAULT_USER_PROMT_TEXT_ENTER_TIMEOUT_MS);
+    let statusString = COMMAND_EXIT_STATUSES[status].toString();
+    let endTime = new Date();
+    let timeElapsedString = Common.timeDiffString(this._startTime, endTime);
+    message = this.getResourceString(message, ...tokens);
 
-    params.message = this.getResourceString(
-      params.options ? RESOURCES.promptMessageFormat : RESOURCES.enterTextPromptMessageFormat,
-      params.message,
-      params.options);
+    if (this._jsonFlag) {
+      // Summarized command result as JSON to stdout
+      this.log({
+        command: this._commandFullName,
+        cliCommandString: Common.getFullCommandLine(),
+        endTime: Common.convertUTCDateToLocalDate(endTime),
+        endTimeUTC: endTime,
+        message: message,
+        fullLog: this._messageCache,
+        stack: stack,
+        startTime: Common.convertUTCDateToLocalDate(this._startTime),
+        startTimeUTC: this._startTime,
+        status: status,
+        statusString: statusString,
+        timeElapsedString: timeElapsedString
+      } as IFinishMessage,
+        LOG_MESSAGE_TYPE.JSON,
+        LOG_MESSAGE_VERBOSITY.ALWAYS,
+        ...tokens);
 
-    const defaultOption = params.default ? this.getResourceString(RESOURCES.defaultPromptOptionFormat, params.default).trim() : undefined;
-    let result = params.default;
+    } else {
 
-    try {
+      // Command result stdout
+      this.log(String(message),
+        LOG_MESSAGE_TYPE.STRING,
+        LOG_MESSAGE_VERBOSITY.MINIMAL,
+        ...tokens);
 
-      result = await this._uxLogger.prompt(
-        params.message,
-        {
-          default: defaultOption,
-          timeout: params.timeout
-        });
+      // Stack trace to stdout on error
+      if (this._printStackTrace && status == COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR && stack) {
+        this.log(
+          this.getResourceString(
+            RESOURCES.loggerStackTraceString,
+            stack),
+          LOG_MESSAGE_TYPE.STRING,
+          LOG_MESSAGE_VERBOSITY.MINIMAL
+        );
+      }
 
-      return result;
+      // "Command finished" to stdout
+      this.log(
+        this.getResourceString(
+          RESOURCES.loggerCommandCompletedString,
+          this._commandFullName,
+          String(status),
+          statusString),
+        status == COMMAND_EXIT_STATUSES.SUCCESS ? LOG_MESSAGE_TYPE.STRING : LOG_MESSAGE_TYPE.ERROR,
+        LOG_MESSAGE_VERBOSITY.MINIMAL
+      );
 
-    } catch (ex) { }
+      // "Time elapsed" to stdout
+      this.log(
+        this.getResourceString(
+          RESOURCES.loggerTimeElapsedString,
+          timeElapsedString),
+        LOG_MESSAGE_TYPE.STRING,
+        LOG_MESSAGE_VERBOSITY.MINIMAL
+      );
 
-    this.startSpinner()
-
-    return result;
-
+    }
   }
 
-  async yesNoPromptAsync(message: string, ...tokens: string[]): Promise<boolean> {
-    return (await this.promptAsync.apply(this, [{
-      message
-    }, ...tokens])) != this.getResourceString(RESOURCES.defaultPromptSelectedOption);
-  }
 
-  async textPromptAsync(message: string, ...tokens: string[]): Promise<string> {
-    return (await this.promptAsync.apply(this, [{
-      default: "",
-      options: "",
-      message
-    }, ...tokens]));
-  }
-
+  // ------ Logging --------//
+  // ----------------------//
   log(message: string | object | ITableMessage,
-    type?: LOG_MESSAGE_TYPE,
+    logMessageType?: LOG_MESSAGE_TYPE,
     verbosity?: LOG_MESSAGE_VERBOSITY,
     ...tokens: string[]
   ): void {
 
-    type = type || LOG_MESSAGE_TYPE.STRING;
+    logMessageType = logMessageType || LOG_MESSAGE_TYPE.STRING;
     verbosity = typeof verbosity == 'undefined' ? LOG_MESSAGE_VERBOSITY.NORMAL : verbosity;
 
     if (typeof message == "undefined" || message == null) {
@@ -436,15 +467,19 @@ export class Logger implements IAppLogger {
     }
     message = typeof message == 'string' ? this.getResourceString.apply(this, [message, ...tokens]) : message;
 
-    let allowWriteLogsToCache = true;
-    const allowWriteLogsToSTdOut = !(this._jsonFlag && type != LOG_MESSAGE_TYPE.JSON);
-    const allowWriteLogsToFile = !this._jsonFlag || (this._jsonFlag && type == LOG_MESSAGE_TYPE.JSON);
-    const omitDateWhenWriteLogsToFile = this._jsonFlag && type == LOG_MESSAGE_TYPE.JSON;
+    const allowWriteLogsToSTdOut = !(this._jsonFlag && logMessageType != LOG_MESSAGE_TYPE.JSON);
+    const allowWriteLogsToFile = (!this._jsonFlag
+      || (this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON))
+      && logMessageType >= this._uxLoggerLevel
+      && this._filelogFlag;
+    const omitDateWhenWriteLogsToFile = this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON;
 
-    if ((this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE
-      || this._uxLoggerVerbosity < verbosity
-      || type < this._uxLoggerLevel)
-      && verbosity != LOG_MESSAGE_VERBOSITY.NONE
+    let allowWriteLogsToCache = true;
+
+    if ((this._uxLoggerVerbosity < verbosity
+      || logMessageType < this._uxLoggerLevel
+      || verbosity == LOG_MESSAGE_VERBOSITY.NONE)
+      && (verbosity > LOG_MESSAGE_VERBOSITY.ALWAYS)
     ) {
       allowWriteLogsToCache = false;
     }
@@ -452,7 +487,7 @@ export class Logger implements IAppLogger {
     const date = message ? this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date())) : '';
     let logMessage: string;
 
-    switch (type) {
+    switch (logMessageType) {
 
       default:
         logMessage = this.getResourceString(RESOURCES.loggerInfoString, date, message as string);
@@ -519,6 +554,10 @@ export class Logger implements IAppLogger {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
   }
 
+  headerVerbose(message: string, ...tokens: string[]): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.VERBOSE, ...tokens]);
+  }
+
   objectNormal(message: object): void {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.OBJECT, LOG_MESSAGE_VERBOSITY.NORMAL]);
   }
@@ -535,85 +574,76 @@ export class Logger implements IAppLogger {
     this.log.apply(this, [message, LOG_MESSAGE_TYPE.ERROR, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
   }
 
-  commandStartMessage(): void {
-    this.startSpinner();
-    this.log(
-      this.getResourceString(RESOURCES.loggerCommandStartedString, this._commandFullName),
-      LOG_MESSAGE_TYPE.STRING,
-      LOG_MESSAGE_VERBOSITY.NORMAL
-    );
-  }
+  // ------ Prompt --------//
+  // ----------------------//
+  async promptAsync(params: {
+    message: string,
+    options?: string,
+    default?: string,
+    nopromptDefault?: string,
+    timeout?: number
+  }, ...tokens: string[]
+  ): Promise<string> {
 
-  commandFinishMessage(message: string | object,
-    status: COMMAND_EXIT_STATUSES,
-    stack?: string,
-    ...tokens: string[]
-  ): void {
+    params.nopromptDefault = (typeof params.nopromptDefault == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptNopromptOption) : params.nopromptDefault || "").trim();
+
+    if (this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE || this._noPromptFlag) {
+      return params.nopromptDefault;
+    }
 
     this.stopSpinner();
 
-    if (typeof message == "undefined" || message == null) {
-      return;
+    const date = this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date()));
+
+    params.options = (typeof params.options == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptOptions) : params.options || "").trim();
+    params.default = (typeof params.default == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptSelectedOption) : params.default || "").trim();
+    params.message = date + (this.getResourceString.apply(this, [params.message, ...tokens]) || "").trim();
+    params.timeout = params.timeout || (params.options ? CONSTANTS.DEFAULT_USER_PROMPT_TIMEOUT_MS : CONSTANTS.DEFAULT_USER_PROMT_TEXT_ENTER_TIMEOUT_MS);
+
+    params.message = this.getResourceString(
+      params.options ? RESOURCES.promptMessageFormat : RESOURCES.enterTextPromptMessageFormat,
+      params.message,
+      params.options);
+
+    const defaultOption = params.default ? this.getResourceString(RESOURCES.defaultPromptOptionFormat, params.default).trim() : undefined;
+    let result = params.default;
+
+    try {
+
+      result = await this._uxLogger.prompt(
+        params.message,
+        {
+          default: defaultOption,
+          timeout: params.timeout
+        });
+
+      return result;
+
+    } catch (ex) { }
+    finally {
+      this.startSpinner();
     }
 
-    this.log('');
+    return result;
 
-    let statusString = COMMAND_EXIT_STATUSES[status].toString();
-    let endTime = new Date();
-    let timeElapsedString = Common.timeDiffString(this._startTime, endTime);
-
-    if (this._jsonFlag) {
-      // Summarized command result as JSON to stdout
-      this.log({
-        command: this._commandFullName,
-        cliCommandString: Common.getFullCommandLine(),
-        endTime: Common.convertUTCDateToLocalDate(endTime),
-        endTimeUTC: endTime,
-        message: message,
-        fullLog: this._messageCache,
-        stack: stack,
-        startTime: Common.convertUTCDateToLocalDate(this._startTime),
-        startTimeUTC: this._startTime,
-        status: status,
-        statusString: statusString,
-        timeElapsedString: timeElapsedString
-      } as IFinishMessage,
-        LOG_MESSAGE_TYPE.JSON,
-        LOG_MESSAGE_VERBOSITY.NONE,
-        ...tokens);
-
-    } else {
-
-      // Command result as string to stdout
-      this.log(String(message),
-        LOG_MESSAGE_TYPE.STRING,
-        LOG_MESSAGE_VERBOSITY.NONE,
-        ...tokens);
-
-      // "Command finished" as string to stdout
-      this.log(
-        this.getResourceString(
-          RESOURCES.loggerCommandCompletedString,
-          this._commandFullName,
-          String(status),
-          statusString),
-        status == COMMAND_EXIT_STATUSES.SUCCESS ? LOG_MESSAGE_TYPE.STRING : LOG_MESSAGE_TYPE.ERROR,
-        LOG_MESSAGE_VERBOSITY.NONE
-      );
-
-      // "Time elapsed" as string to stdout
-      this.log(
-        this.getResourceString(
-          RESOURCES.loggerTimeElapsedString,
-          timeElapsedString),
-        LOG_MESSAGE_TYPE.STRING,
-        LOG_MESSAGE_VERBOSITY.NONE
-      );
-
-    }
   }
 
+  async yesNoPromptAsync(message: string, ...tokens: string[]): Promise<boolean> {
+    return (await this.promptAsync.apply(this, [{
+      message
+    }, ...tokens])) != this.getResourceString(RESOURCES.defaultPromptSelectedOption);
+  }
 
+  async textPromptAsync(message: string, ...tokens: string[]): Promise<string> {
+    return (await this.promptAsync.apply(this, [{
+      default: "",
+      options: "",
+      message
+    }, ...tokens]));
+  }
+
+  // ------ Spinner --------//
+  // ----------------------//
   spinner(message?: string, ...tokens: string[]): void {
     message = this.getResourceString.apply(this, [message, ...tokens]);
     if (!message) {
@@ -628,17 +658,16 @@ export class Logger implements IAppLogger {
   }
 
   startSpinner() {
-    if ((this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE
-      || this._uxLoggerLevel != LoggerLevel.INFO)
-      && !this._jsonFlag) {
-      this.spinner(RESOURCES.commandInProgress);
-    }
+    this.spinner(RESOURCES.commandInProgress);
   }
 
   stopSpinner() {
     this.spinner();
   }
 
+
+  // ------ Resources --------//
+  // ----------------------//
   getResourceString(message: any, ...tokens: string[]): any {
     if (!message || typeof message != "string") return message;
     try {
@@ -654,6 +683,10 @@ export class Logger implements IAppLogger {
     }
   }
 
+
+
+  // ------ Common --------//
+  // ----------------------//
   getStartTime(): Date {
     return this._startTime;
   }
@@ -671,6 +704,7 @@ export enum LOG_MESSAGE_TYPE {
 }
 
 export enum LOG_MESSAGE_VERBOSITY {
+  ALWAYS = -1,
   NONE = 0,
   MINIMAL = 1,
   NORMAL = 2,

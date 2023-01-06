@@ -287,7 +287,7 @@ export default class MigrationJob {
   */
   async getTotalRecordsCountAsync(): Promise<void> {
 
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerMinimal(RESOURCES.gettingRecordsCount);
 
     for (let index = 0; index < this.tasks.length; index++) {
@@ -304,7 +304,7 @@ export default class MigrationJob {
   */
   async deleteOldRecordsAsync(): Promise<void> {
 
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerMinimal(RESOURCES.deletingTargetData);
 
     let deleted = false;
@@ -330,8 +330,13 @@ export default class MigrationJob {
 
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // STEP 1 SOURCE FORWARDS  :::::::::::::::::::::::::::::::::::::::::::::::::
+
+    this.logger.infoVerbose(RESOURCES.newLine);
+    this.logger.headerMinimal(RESOURCES.source);
+    this.logger.headerVerbose(RESOURCES.separator);
+
     let retrieved: boolean = false;
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerMinimal(RESOURCES.retrievingData, this.logger.getResourceString(RESOURCES.Step1));
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
@@ -347,11 +352,12 @@ export default class MigrationJob {
     // STEP 2 SOURCE BACKWARDS ::::::::::::::::::::::::::::::::::::::::::::::::
     // PASS 1 ---
     retrieved = false;
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerMinimal(RESOURCES.retrievingData, this.logger.getResourceString(RESOURCES.Step2));
 
     this.logger.infoNormal(RESOURCES.Pass1);
-    this.logger.infoNormal(RESOURCES.separator);
+    this.logger.headerVerbose(RESOURCES.separator);
+
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
       retrieved = await task.retrieveRecords("backwards", false) || retrieved;
@@ -362,9 +368,10 @@ export default class MigrationJob {
 
     // PASS 2 ---
     retrieved = false;
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.infoNormal(RESOURCES.Pass2);
-    this.logger.infoNormal(RESOURCES.separator);
+    this.logger.headerVerbose(RESOURCES.separator);
+
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
       retrieved = await task.retrieveRecords("backwards", false) || retrieved;
@@ -375,9 +382,10 @@ export default class MigrationJob {
 
     // PASS 3 --- SOURCE FORWARDS (REVERSE A)
     retrieved = false;
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.infoNormal(RESOURCES.Pass3);
-    this.logger.infoNormal(RESOURCES.separator);
+    this.logger.headerVerbose(RESOURCES.separator);
+
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
       retrieved = await task.retrieveRecords("forwards", true) || retrieved;
@@ -388,9 +396,10 @@ export default class MigrationJob {
 
     // PASS 4 --- SOURCE FORWARDS (REVERSE B)
     retrieved = false;
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.infoNormal(RESOURCES.Pass4);
-    this.logger.infoNormal(RESOURCES.separator);
+    this.logger.headerVerbose(RESOURCES.separator);
+
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
       retrieved = await task.retrieveRecords("forwards", true) || retrieved;
@@ -403,9 +412,10 @@ export default class MigrationJob {
     //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // STEP 3 TARGET ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     retrieved = false;
-    this.logger.infoMinimal(RESOURCES.newLine);
-    this.logger.infoMinimal(RESOURCES.target);
-    this.logger.infoMinimal(RESOURCES.separator);
+    this.logger.infoVerbose(RESOURCES.newLine);
+    this.logger.headerMinimal(RESOURCES.target);
+    this.logger.headerVerbose(RESOURCES.separator);
+
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
       retrieved = await task.retrieveRecords("target", false) || retrieved;
@@ -419,7 +429,7 @@ export default class MigrationJob {
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // RUN ON-BEFORE ADDONS :::::::::::::::::::::::::::::::::::::::::::::::::::
     let processed = false;
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerNormal(RESOURCES.processingAddon);
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
@@ -428,12 +438,12 @@ export default class MigrationJob {
     if (!processed) {
       this.logger.infoNormal(RESOURCES.nothingToProcess);
     }
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
 
 
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // TOTAL FETCHED SUMMARY :::::::::::::::::::::::::::::::::::::::::::::::::::
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerNormal(RESOURCES.fetchingSummary);
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
@@ -466,7 +476,7 @@ export default class MigrationJob {
 
     //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // STEP 1 FORWARDS ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerMinimal(RESOURCES.updatingTarget, this.logger.getResourceString(RESOURCES.Step1));
 
     for (let index = 0; index < tasksToProcess.length; index++) {
@@ -494,7 +504,7 @@ export default class MigrationJob {
 
     //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // STEP 2 BACKWARDS :::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    this.logger.infoMinimal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerMinimal(RESOURCES.updatingTarget, this.logger.getResourceString(RESOURCES.Step2));
 
     totalProcessedRecordsAmount = 0;
@@ -527,7 +537,7 @@ export default class MigrationJob {
     //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // DELETE BY HIERARCHY ::::::::::::::::::::::::::::::::::::::::::::::::::::
     if (this.script.hasDeleteByHierarchyOperation) {
-      this.logger.infoMinimal(RESOURCES.newLine);
+      this.logger.infoVerbose(RESOURCES.newLine);
       this.logger.headerMinimal(RESOURCES.deletingTarget, this.logger.getResourceString(RESOURCES.Step1));
 
       for (let index = 0; index < this.deleteTasks.length; index++) {
@@ -547,14 +557,14 @@ export default class MigrationJob {
       else
         this.logger.infoNormal(RESOURCES.nothingToDelete2);
 
-      this.logger.infoNormal(RESOURCES.newLine);
+      this.logger.infoVerbose(RESOURCES.newLine);
     }
 
 
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // RUN ON-AFTER ADDONS :::::::::::::::::::::::::::::::::::::::::::::::::::
     let processed = false;
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerNormal(RESOURCES.processingAddon);
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
@@ -563,12 +573,12 @@ export default class MigrationJob {
     if (!processed) {
       this.logger.infoNormal(RESOURCES.nothingToProcess);
     }
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
 
 
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // TOTAL PROCESSED SUMMARY :::::::::::::::::::::::::::::::::::::::::::::::::::
-    this.logger.infoNormal(RESOURCES.newLine);
+    this.logger.infoVerbose(RESOURCES.newLine);
     this.logger.headerNormal(RESOURCES.updatingSummary);
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
