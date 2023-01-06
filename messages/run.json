@@ -40,6 +40,9 @@
 
     "errorMissingRequiredFlag": "Missing required flag(s): %s",
 
+    "loglevelFlagDescription": "[Optional] Logging level for this command invocation",
+    "loglevelLongFlagDescription": "[Optional] Specified the type of messages to be logged to stdout. The file logging has always INFO level.",
+
     "canModifyFlagDescription": "[Optional] Allows modification of target production environment without preliminary prompting the user about it.",
     "canModifyFlagLongDescription": "[Optional] When production environment is set as the Target and this flag is set to the target DOMAIN NAME (for example prod-instance.my.salesforce.com), the Plugin will not ask the user for the approval to make modifications, otherwise the user will be prompted to prevent the critical data from destroying by accident.",
 

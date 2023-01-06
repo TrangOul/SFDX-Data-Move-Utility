@@ -58,9 +58,7 @@ export enum RESOURCES {
 
   loggerDateFormat = "loggerDateFormat",
   loggerInfoString = "loggerInfoString",
-
   loggerWarnString = "loggerWarnString",
-
   loggerErrorString = "loggerErrorString",
 
   loggerStackTraceString = "loggerStackTraceString",
@@ -255,7 +253,7 @@ class FileLogger {
     if (this.enabled) {
       message = message || "";
       const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
-      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerInfoString, [date, message]).trim() : '\n');
+      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerInfoString, [date, message]) : '\n');
     }
   }
 
@@ -263,7 +261,7 @@ class FileLogger {
     if (this.enabled) {
       message = message || "";
       const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
-      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [date, message]).trim() : '\n');
+      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [date, message]) : '\n');
     }
   }
 
@@ -271,7 +269,7 @@ class FileLogger {
     if (this.enabled) {
       message = message || "";
       const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
-      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [date, message]).trim() : '\n');
+      fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [date, message]) : '\n');
     }
   }
 
@@ -430,14 +428,13 @@ export class Logger implements IAppLogger {
     ...tokens: string[]
   ): void {
 
-
     type = type || LOG_MESSAGE_TYPE.STRING;
     verbosity = typeof verbosity == 'undefined' ? LOG_MESSAGE_VERBOSITY.NORMAL : verbosity;
 
     if (typeof message == "undefined" || message == null) {
       return;
     }
-    message = this.getResourceString.apply(this, [message, ...tokens]) || '';
+    message = typeof message == 'string' ? this.getResourceString.apply(this, [message, ...tokens]) : message;
 
     let allowWriteLogsToCache = true;
     const allowWriteLogsToSTdOut = !(this._jsonFlag && type != LOG_MESSAGE_TYPE.JSON);
@@ -452,56 +449,49 @@ export class Logger implements IAppLogger {
       allowWriteLogsToCache = false;
     }
 
-
-    let dateString = Common.formatDateTime(new Date());
+    const date = message ? this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date())) : '';
     let logMessage: string;
 
-    if (!message) {
-      logMessage = '\n';
-      allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log('');
-    } else {
+    switch (type) {
 
-      switch (type) {
+      default:
+        logMessage = this.getResourceString(RESOURCES.loggerInfoString, date, message as string);
+        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+        break;
 
-        default:
-          logMessage = this.getResourceString(RESOURCES.loggerInfoString, dateString, message as string);
-          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
-          break;
+      case LOG_MESSAGE_TYPE.ERROR:
+        logMessage = this.getResourceString(RESOURCES.loggerErrorString, date, message as string);
+        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+        break;
 
-        case LOG_MESSAGE_TYPE.ERROR:
-          logMessage = this.getResourceString(RESOURCES.loggerErrorString, dateString, message as string);
-          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
-          break;
+      case LOG_MESSAGE_TYPE.WARN:
+        logMessage = this.getResourceString(RESOURCES.loggerWarnString, date, message as string);
+        (allowWriteLogsToCache = allowWriteLogsToCache && !this._noWarningsFlag) && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+        break;
 
-        case LOG_MESSAGE_TYPE.WARN:
-          logMessage = this.getResourceString(RESOURCES.loggerWarnString, dateString, message as string);
-          (allowWriteLogsToCache = allowWriteLogsToCache && !this._noWarningsFlag) && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
-          break;
+      case LOG_MESSAGE_TYPE.TABLE:
+        logMessage = String(message);
+        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.table((message as ITableMessage).tableBody, {
+          columns: (message as ITableMessage).tableColumns
+        });
+        break;
 
-        case LOG_MESSAGE_TYPE.TABLE:
-          logMessage = String(message);
-          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.table((message as ITableMessage).tableBody, {
-            columns: (message as ITableMessage).tableColumns
-          });
-          break;
+      case LOG_MESSAGE_TYPE.JSON:
+        logMessage = JSON.stringify(message, null, 3);
+        this._uxLogger.styledJSON(message);
+        allowWriteLogsToCache = false;
+        break;
 
-        case LOG_MESSAGE_TYPE.JSON:
-          logMessage = JSON.stringify(message, null, 3);
-          this._uxLogger.styledJSON(message);
-          allowWriteLogsToCache = false;
-          break;
+      case LOG_MESSAGE_TYPE.OBJECT:
+        logMessage = JSON.stringify(message, null, 3);
+        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.styledObject(message);
+        break;
 
-        case LOG_MESSAGE_TYPE.OBJECT:
-          logMessage = JSON.stringify(message, null, 3);
-          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.styledObject(message);
-          break;
+      case LOG_MESSAGE_TYPE.HEADER:
+        logMessage = String(message).toUpperCase();
+        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.styledHeader(message);
+        break;
 
-        case LOG_MESSAGE_TYPE.HEADER:
-          logMessage = String(message).toUpperCase();
-          allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.styledHeader(message);
-          break;
-
-      }
     }
 
     allowWriteLogsToFile && this._fileLogger.log(logMessage, omitDateWhenWriteLogsToFile);

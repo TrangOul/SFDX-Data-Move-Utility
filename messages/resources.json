@@ -38,9 +38,7 @@
 
     "loggerDateFormat": "[%s]",
     "loggerInfoString": "%s %s",
-
     "loggerWarnString": "%s [WARN] %s",
-
     "loggerErrorString": "%s [ERROR] %s",
 
     "loggerStackTraceString": "[STACK TRACE] %s",

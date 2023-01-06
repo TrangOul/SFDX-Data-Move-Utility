@@ -118,7 +118,13 @@ export default class Run extends SfdxCommand implements IRunProcess {
       char: "m",
       description: commandMessages.getMessage("simulationFlagDescription"),
       longDescription: commandMessages.getMessage("simulationLongFlagDescription")
-    })
+    }),
+    loglevel: flags.string({
+      description: commandMessages.getMessage('loglevelFlagDescription'),
+      longDescription: commandMessages.getMessage('loglevelLongFlagDescription'),
+      default: 'info',
+      options: ['info', 'debug', 'warn', 'error', 'fatal', 'trace', 'INFO', 'DEBUG', 'WARN', 'ERROR', 'FATAL', 'TRACE']
+    }),
   };
 
 
