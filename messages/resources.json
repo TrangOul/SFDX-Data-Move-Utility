@@ -30,11 +30,10 @@
     "actionIsNotPermitted": "The action is not permitted.",
 
     "defaultPromptOptions": "y/n",
-    "defaultPromptNopromptOption": "y",
-    "defaultPromptSelectedOption": "n",
-    "promptMessageFormat": "%s (%s)?",
+    "defaultNopromptOption": "y",
+    "defaultPromptNoOption": "n",
+    "promptMessageFormat": "%s (%s) ?",
     "enterTextPromptMessageFormat": "%s ?",
-    "defaultPromptOptionFormat": "%s",
 
     "loggerDateFormat": "[%s]",
     "loggerInfoString": "%s %s",

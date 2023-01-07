@@ -1751,5 +1751,17 @@ public static extractWhereClause(query: string): string {
     return entryNames.map(name => enumType[name] as ValType);
   }
 
+   /**
+     * Creates a time delay
+     *
+     * @static
+     * @param {number} time The delay length in ms
+     * @return {*}  {Promise<void>}
+     * @memberof Utils
+     */
+    static async delayAsync(time: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, time));
+    }
+
 
 }

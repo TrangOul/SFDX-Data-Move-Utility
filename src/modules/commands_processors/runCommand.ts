@@ -17,6 +17,7 @@ import { MigrationJob as Job, ScriptObjectSet } from '../models';
 import { CommandInitializationError } from '../models/common_models/errors';
 import { ADDON_EVENTS } from '../components/common_components/enumerations';
 import IPluginInfo from '../models/common_models/IPluginInfo';
+import { Common } from '../components/common_components/common';
 
 
 
@@ -93,12 +94,6 @@ export class RunCommand {
     if (!fs.existsSync(this.basePath)) {
       throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.workingPathDoesNotExist));
     }
-
-    this.logger.infoMinimal('MINIMAL!!!');
-    this.logger.infoNormal('NORMAL!!!');
-    this.logger.infoVerbose('VERBOSE!!!');
-
-    throw new Error('ERROR!');
 
     if (!json) {
 

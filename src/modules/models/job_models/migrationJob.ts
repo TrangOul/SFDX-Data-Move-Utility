@@ -332,7 +332,7 @@ export default class MigrationJob {
     // STEP 1 SOURCE FORWARDS  :::::::::::::::::::::::::::::::::::::::::::::::::
 
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.headerMinimal(RESOURCES.source);
+    this.logger.headerMinimal(this.logger.getResourceString(RESOURCES.source) + ':');
     this.logger.headerVerbose(RESOURCES.separator);
 
     let retrieved: boolean = false;
@@ -413,7 +413,7 @@ export default class MigrationJob {
     // STEP 3 TARGET ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     retrieved = false;
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.headerMinimal(RESOURCES.target);
+    this.logger.headerMinimal(this.logger.getResourceString(RESOURCES.target) + ':');
     this.logger.headerVerbose(RESOURCES.separator);
 
     for (let index = 0; index < this.queryTasks.length; index++) {

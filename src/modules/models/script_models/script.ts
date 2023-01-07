@@ -586,7 +586,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
         && this.targetOrg.media == DATA_MEDIA_TYPE.Org && !this.sourceOrg.isPersonAccountEnabled) {
         // Missing Person Account support in the Target
         throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.needBothOrgsToSupportPersonAccounts,
-          this.logger.getResourceString(RESOURCES.source)));
+          this.logger.getResourceString(RESOURCES.sourceOrg)));
       }
       // Verify source org
       if (this.sourceOrg.media == DATA_MEDIA_TYPE.Org && !this.sourceOrg.isPersonAccountEnabled

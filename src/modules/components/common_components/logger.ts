@@ -50,11 +50,10 @@ export enum RESOURCES {
   actionIsNotPermitted = "actionIsNotPermitted",
 
   defaultPromptOptions = "defaultPromptOptions",
-  defaultPromptNopromptOption = "defaultPromptNopromptOption",
-  defaultPromptSelectedOption = "defaultPromptSelectedOption",
+  defaultNopromptOption = "defaultNopromptOption",
+  defaultPromptNoOption = "defaultPromptNoOption",
   promptMessageFormat = "promptMessageFormat",
   enterTextPromptMessageFormat = "enterTextPromptMessageFormat",
-  defaultPromptOptionFormat = "defaultPromptOptionFormat",
 
   loggerDateFormat = "loggerDateFormat",
   loggerInfoString = "loggerInfoString",
@@ -273,6 +272,7 @@ export class Logger implements IAppLogger {
 
   private _commandFullName: string;
   private _jsonFlag: boolean;
+  private _silentFlag: boolean;
   private _filelogFlag: boolean;
   private _startTime: Date;
   private _fileLogger: FileLogger;
@@ -315,6 +315,7 @@ export class Logger implements IAppLogger {
     this._filelogFlag = fileLogFlag;
     this._noPromptFlag = noPromptFlag;
     this._noWarningsFlag = noWarningsFlag;
+    this._silentFlag = quietFlag;
 
     this._startTime = new Date();
 
@@ -383,10 +384,12 @@ export class Logger implements IAppLogger {
 
     this.log('');
 
+    const printStackTrace = this._printStackTrace && status == COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR && stack;
     let statusString = COMMAND_EXIT_STATUSES[status].toString();
     let endTime = new Date();
     let timeElapsedString = Common.timeDiffString(this._startTime, endTime);
     message = this.getResourceString(message, ...tokens);
+    const stackArr = printStackTrace && stack.split('\n');
 
     if (this._jsonFlag) {
       // Summarized command result as JSON to stdout
@@ -397,7 +400,7 @@ export class Logger implements IAppLogger {
         endTimeUTC: endTime,
         message: message,
         fullLog: this._messageCache,
-        stack: stack,
+        stack: printStackTrace ? stackArr : [],
         startTime: Common.convertUTCDateToLocalDate(this._startTime),
         startTimeUTC: this._startTime,
         status: status,
@@ -417,7 +420,7 @@ export class Logger implements IAppLogger {
         ...tokens);
 
       // Stack trace to stdout on error
-      if (this._printStackTrace && status == COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR && stack) {
+      if (printStackTrace) {
         this.log(
           this.getResourceString(
             RESOURCES.loggerStackTraceString,
@@ -467,22 +470,23 @@ export class Logger implements IAppLogger {
     }
     message = typeof message == 'string' ? this.getResourceString.apply(this, [message, ...tokens]) : message;
 
-    const allowWriteLogsToSTdOut = !(this._jsonFlag && logMessageType != LOG_MESSAGE_TYPE.JSON);
-    const allowWriteLogsToFile = (!this._jsonFlag
-      || (this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON))
+    let allowWriteLogsToCache = (verbosity <= this._uxLoggerVerbosity
+      || verbosity == LOG_MESSAGE_VERBOSITY.ALWAYS
+      || logMessageType == LOG_MESSAGE_TYPE.WARN
+      || logMessageType == LOG_MESSAGE_TYPE.ERROR);
+
+    const allowWriteLogsToSTdOut = allowWriteLogsToCache
+      && (!this._jsonFlag || this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON)
+      && this._uxLoggerVerbosity != LOG_MESSAGE_VERBOSITY.NONE;
+
+    const allowWriteLogsToFile = this._filelogFlag
       && logMessageType >= this._uxLoggerLevel
-      && this._filelogFlag;
+      && (
+        !this._jsonFlag
+        || (this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON)
+      );
+
     const omitDateWhenWriteLogsToFile = this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON;
-
-    let allowWriteLogsToCache = true;
-
-    if ((this._uxLoggerVerbosity < verbosity
-      || logMessageType < this._uxLoggerLevel
-      || verbosity == LOG_MESSAGE_VERBOSITY.NONE)
-      && (verbosity > LOG_MESSAGE_VERBOSITY.ALWAYS)
-    ) {
-      allowWriteLogsToCache = false;
-    }
 
     const date = message ? this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date())) : '';
     let logMessage: string;
@@ -491,40 +495,42 @@ export class Logger implements IAppLogger {
 
       default:
         logMessage = this.getResourceString(RESOURCES.loggerInfoString, date, message as string);
-        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+        allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
         break;
 
       case LOG_MESSAGE_TYPE.ERROR:
         logMessage = this.getResourceString(RESOURCES.loggerErrorString, date, message as string);
-        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+        allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
         break;
 
       case LOG_MESSAGE_TYPE.WARN:
         logMessage = this.getResourceString(RESOURCES.loggerWarnString, date, message as string);
-        (allowWriteLogsToCache = allowWriteLogsToCache && !this._noWarningsFlag) && allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+        allowWriteLogsToSTdOut
+          && (allowWriteLogsToCache = allowWriteLogsToCache && !this._noWarningsFlag)
+          && this._uxLogger.log(logMessage);
         break;
 
       case LOG_MESSAGE_TYPE.TABLE:
         logMessage = String(message);
-        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.table((message as ITableMessage).tableBody, {
+        allowWriteLogsToSTdOut && this._uxLogger.table((message as ITableMessage).tableBody, {
           columns: (message as ITableMessage).tableColumns
         });
         break;
 
       case LOG_MESSAGE_TYPE.JSON:
         logMessage = JSON.stringify(message, null, 3);
-        this._uxLogger.styledJSON(message);
-        allowWriteLogsToCache = false;
+        allowWriteLogsToSTdOut && this._uxLogger.styledJSON(message);
+        allowWriteLogsToCache = !this._jsonFlag;
         break;
 
       case LOG_MESSAGE_TYPE.OBJECT:
         logMessage = JSON.stringify(message, null, 3);
-        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.styledObject(message);
+        allowWriteLogsToSTdOut && this._uxLogger.styledObject(message);
         break;
 
       case LOG_MESSAGE_TYPE.HEADER:
         logMessage = String(message).toUpperCase();
-        allowWriteLogsToCache && allowWriteLogsToSTdOut && this._uxLogger.styledHeader(message);
+        allowWriteLogsToSTdOut && this._uxLogger.styledHeader(message);
         break;
 
     }
@@ -585,19 +591,13 @@ export class Logger implements IAppLogger {
   }, ...tokens: string[]
   ): Promise<string> {
 
-    params.nopromptDefault = (typeof params.nopromptDefault == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptNopromptOption) : params.nopromptDefault || "").trim();
-
-    if (this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE || this._noPromptFlag) {
-      return params.nopromptDefault;
-    }
-
-    this.stopSpinner();
+    params.nopromptDefault = (typeof params.nopromptDefault == 'undefined' ? this.getResourceString(RESOURCES.defaultNopromptOption) : params.nopromptDefault || "").trim();
 
     const date = this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date()));
 
     params.options = (typeof params.options == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptOptions) : params.options || "").trim();
-    params.default = (typeof params.default == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptSelectedOption) : params.default || "").trim();
-    params.message = date + (this.getResourceString.apply(this, [params.message, ...tokens]) || "").trim();
+    params.default = (typeof params.default == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptNoOption) : params.default || "").trim();
+    params.message = date + " " + (this.getResourceString.apply(this, [params.message, ...tokens]) || "").trim();
     params.timeout = params.timeout || (params.options ? CONSTANTS.DEFAULT_USER_PROMPT_TIMEOUT_MS : CONSTANTS.DEFAULT_USER_PROMT_TEXT_ENTER_TIMEOUT_MS);
 
     params.message = this.getResourceString(
@@ -605,20 +605,24 @@ export class Logger implements IAppLogger {
       params.message,
       params.options);
 
-    const defaultOption = params.default ? this.getResourceString(RESOURCES.defaultPromptOptionFormat, params.default).trim() : undefined;
     let result = params.default;
 
     try {
-
-      result = await this._uxLogger.prompt(
-        params.message,
-        {
-          default: defaultOption,
-          timeout: params.timeout
-        });
-
-      return result;
-
+      if (this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE
+        || this._noPromptFlag
+        || this._jsonFlag
+        || this._silentFlag) {
+        this.infoNormal(params.message + ' ' + params.nopromptDefault);
+        result = params.nopromptDefault;
+      } else {
+        this.stopSpinner();
+        result = await this._uxLogger.prompt(
+          params.message,
+          {
+            default: params.default,
+            timeout: params.timeout
+          });
+      }
     } catch (ex) { }
     finally {
       this.startSpinner();
@@ -631,7 +635,7 @@ export class Logger implements IAppLogger {
   async yesNoPromptAsync(message: string, ...tokens: string[]): Promise<boolean> {
     return (await this.promptAsync.apply(this, [{
       message
-    }, ...tokens])) != this.getResourceString(RESOURCES.defaultPromptSelectedOption);
+    }, ...tokens])) != this.getResourceString(RESOURCES.defaultPromptNoOption);
   }
 
   async textPromptAsync(message: string, ...tokens: string[]): Promise<string> {
@@ -747,7 +751,7 @@ export interface IFinishMessage {
   cliCommandString: string,
   message: string,
   fullLog: string[],
-  stack: string,
+  stack: string[],
   status: number,
   statusString: string,
   startTime: Date,
