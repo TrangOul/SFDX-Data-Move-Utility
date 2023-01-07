@@ -39,10 +39,10 @@ export class TaskData {
 
     /**
      * [Source Record] => [Target Record]
-     *(The full map for all records between the Source record 
+     *(The full map for all records between the Source record
         and the associated Target record, mapped by the defined ExternalId key)
         Note! This Map will contain ONLY the pairs between existing Source and Target records.
-     * 
+     *
      * @type {Map<any, any>}
      * @memberof TaskData
      */
@@ -108,7 +108,7 @@ export class TaskData {
     }
 
     /**
-     *  List of all Field Api Names to qury. 
+     *  List of all Field Api Names to qury.
      *
      * @readonly
      * @type {string[]}
@@ -143,11 +143,11 @@ export class TaskData {
 
     /**
      * Returns the full path to the target filename (Case_insert_target.csv)
-     * 
+     *
      *
      * @param {OPERATION} operation The operation (_insert)
      * @param {string} [fileNameSuffix] The filename suffix (_person)
-     * @returns {string} 
+     * @returns {string}
      * @memberof TaskData
      */
     getTargetCSVFilename(operation: OPERATION, fileNameSuffix?: string): string {
@@ -186,12 +186,12 @@ export class TaskData {
      * @memberof TaskData
      */
     getResourceString_Step(mode: "forwards" | "backwards" | "target"): string {
-        return mode == "forwards" ? this.task.logger.getResourceString(RESOURCES.Step1)
-            : this.task.logger.getResourceString(RESOURCES.Step2);
+        return mode == "forwards" ? this.task.logger.getResourceString(RESOURCES.step1)
+            : this.task.logger.getResourceString(RESOURCES.step2);
     }
 
     /**
-     * The all previous tasks by the job execution order 
+     * The all previous tasks by the job execution order
      *
      * @readonly
      * @type {MigrationJobTask[]}
@@ -297,7 +297,7 @@ export class TaskOrgData {
     isSource: boolean;
 
     /**
-     * Complex ExternalId value => Id 
+     * Complex ExternalId value => Id
      * (Account.Name => Account.Id)
      *
      * @type {Map<string, string>}

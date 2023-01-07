@@ -337,7 +337,7 @@ export default class MigrationJob {
 
     let retrieved: boolean = false;
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.headerMinimal(RESOURCES.retrievingData, this.logger.getResourceString(RESOURCES.Step1));
+    this.logger.headerMinimal(RESOURCES.retrievingData, this.logger.getResourceString(RESOURCES.step1));
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
       retrieved = await task.retrieveRecords("forwards", false) || retrieved;
@@ -345,7 +345,7 @@ export default class MigrationJob {
     if (!retrieved) {
       this.logger.infoNormal(RESOURCES.noRecords);
     }
-    this.logger.infoNormal(RESOURCES.retrievingDataCompleted, this.logger.getResourceString(RESOURCES.Step1));
+    this.logger.infoNormal(RESOURCES.retrievingDataCompleted, this.logger.getResourceString(RESOURCES.step1));
 
 
     //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -353,9 +353,9 @@ export default class MigrationJob {
     // PASS 1 ---
     retrieved = false;
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.headerMinimal(RESOURCES.retrievingData, this.logger.getResourceString(RESOURCES.Step2));
+    this.logger.headerMinimal(RESOURCES.retrievingData, this.logger.getResourceString(RESOURCES.step2));
 
-    this.logger.infoNormal(RESOURCES.Pass1);
+    this.logger.infoNormal(RESOURCES.pass1);
     this.logger.headerVerbose(RESOURCES.separator);
 
     for (let index = 0; index < this.queryTasks.length; index++) {
@@ -369,7 +369,7 @@ export default class MigrationJob {
     // PASS 2 ---
     retrieved = false;
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.infoNormal(RESOURCES.Pass2);
+    this.logger.infoNormal(RESOURCES.pass2);
     this.logger.headerVerbose(RESOURCES.separator);
 
     for (let index = 0; index < this.queryTasks.length; index++) {
@@ -383,7 +383,7 @@ export default class MigrationJob {
     // PASS 3 --- SOURCE FORWARDS (REVERSE A)
     retrieved = false;
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.infoNormal(RESOURCES.Pass3);
+    this.logger.infoNormal(RESOURCES.pass3);
     this.logger.headerVerbose(RESOURCES.separator);
 
     for (let index = 0; index < this.queryTasks.length; index++) {
@@ -397,7 +397,7 @@ export default class MigrationJob {
     // PASS 4 --- SOURCE FORWARDS (REVERSE B)
     retrieved = false;
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.infoNormal(RESOURCES.Pass4);
+    this.logger.infoNormal(RESOURCES.pass4);
     this.logger.headerVerbose(RESOURCES.separator);
 
     for (let index = 0; index < this.queryTasks.length; index++) {
@@ -423,7 +423,7 @@ export default class MigrationJob {
     if (!retrieved) {
       this.logger.infoNormal(RESOURCES.noRecords);
     }
-    this.logger.infoNormal(RESOURCES.retrievingDataCompleted, this.logger.getResourceString(RESOURCES.Step2));
+    this.logger.infoNormal(RESOURCES.retrievingDataCompleted, this.logger.getResourceString(RESOURCES.step2));
 
 
     //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -477,7 +477,7 @@ export default class MigrationJob {
     //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // STEP 1 FORWARDS ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.headerMinimal(RESOURCES.updatingTarget, this.logger.getResourceString(RESOURCES.Step1));
+    this.logger.headerMinimal(RESOURCES.updatingTarget, this.logger.getResourceString(RESOURCES.step1));
 
     for (let index = 0; index < tasksToProcess.length; index++) {
       const task = tasksToProcess[index];
@@ -497,7 +497,7 @@ export default class MigrationJob {
       totalProcessedRecordsByObjectsMap.set(task.sObjectName, processedRecordsAmount);
     }
     if (totalProcessedRecordsAmount > 0)
-      this.logger.infoNormal(RESOURCES.updatingTargetCompleted, this.logger.getResourceString(RESOURCES.Step1), String(totalProcessedRecordsAmount));
+      this.logger.infoNormal(RESOURCES.updatingTargetCompleted, this.logger.getResourceString(RESOURCES.step1), String(totalProcessedRecordsAmount));
     else
       this.logger.infoNormal(RESOURCES.nothingUpdated);
 
@@ -505,7 +505,7 @@ export default class MigrationJob {
     //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // STEP 2 BACKWARDS :::::::::::::::::::::::::::::::::::::::::::::::::::::::
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.headerMinimal(RESOURCES.updatingTarget, this.logger.getResourceString(RESOURCES.Step2));
+    this.logger.headerMinimal(RESOURCES.updatingTarget, this.logger.getResourceString(RESOURCES.step2));
 
     totalProcessedRecordsAmount = 0;
 
@@ -529,7 +529,7 @@ export default class MigrationJob {
       }
     }
     if (totalProcessedRecordsAmount > 0)
-      this.logger.infoNormal(RESOURCES.updatingTargetCompleted, this.logger.getResourceString(RESOURCES.Step2), String(totalProcessedRecordsAmount));
+      this.logger.infoNormal(RESOURCES.updatingTargetCompleted, this.logger.getResourceString(RESOURCES.step2), String(totalProcessedRecordsAmount));
     else
       this.logger.infoNormal(RESOURCES.nothingUpdated);
 
@@ -538,7 +538,7 @@ export default class MigrationJob {
     // DELETE BY HIERARCHY ::::::::::::::::::::::::::::::::::::::::::::::::::::
     if (this.script.hasDeleteByHierarchyOperation) {
       this.logger.infoVerbose(RESOURCES.newLine);
-      this.logger.headerMinimal(RESOURCES.deletingTarget, this.logger.getResourceString(RESOURCES.Step1));
+      this.logger.headerMinimal(RESOURCES.deletingTarget, this.logger.getResourceString(RESOURCES.step1));
 
       for (let index = 0; index < this.deleteTasks.length; index++) {
         const task = this.deleteTasks[index];
@@ -553,7 +553,7 @@ export default class MigrationJob {
       }
 
       if (totalProcessedRecordsAmount > 0)
-        this.logger.infoNormal(RESOURCES.deletingDataCompleted, this.logger.getResourceString(RESOURCES.Step1), String(totalProcessedRecordsAmount));
+        this.logger.infoNormal(RESOURCES.deletingDataCompleted, this.logger.getResourceString(RESOURCES.step1), String(totalProcessedRecordsAmount));
       else
         this.logger.infoNormal(RESOURCES.nothingToDelete2);
 

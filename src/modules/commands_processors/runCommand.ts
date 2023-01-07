@@ -17,7 +17,6 @@ import { MigrationJob as Job, ScriptObjectSet } from '../models';
 import { CommandInitializationError } from '../models/common_models/errors';
 import { ADDON_EVENTS } from '../components/common_components/enumerations';
 import IPluginInfo from '../models/common_models/IPluginInfo';
-import { Common } from '../components/common_components/common';
 
 
 
@@ -140,7 +139,7 @@ export class RunCommand {
   async setupObjectSetAsync(objectSetIndex: number) {
 
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.headerMinimal(RESOURCES.ObjectSetStarted, (objectSetIndex + 1).toString())
+    this.logger.headerMinimal(RESOURCES.objectSetStarted, (objectSetIndex + 1).toString())
     this.logger.infoVerbose(RESOURCES.newLine);
 
     //Initialize script for multi object set

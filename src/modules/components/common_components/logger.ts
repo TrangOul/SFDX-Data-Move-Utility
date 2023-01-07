@@ -21,29 +21,25 @@ export enum RESOURCES {
 
   newLine = "newLine",
   separator = "separator",
-  source = "source",
-  target = "target",
-  Step1 = "Step1",
-  Step2 = "Step2",
-  Pass1 = "Pass1",
-  Pass2 = "Pass2",
-  Pass3 = "Pass3",
-  Pass4 = "Pass4",
-  ObjectSetStarted = "ObjectSetStarted",
+  source = "Source",
+  target = "Target",
+  step1 = "step1",
+  step2 = "step2",
+  pass1 = "pass1",
+  pass2 = "pass2",
+  pass3 = "pass3",
+  pass4 = "pass4",
+  objectSetStarted = "objectSetStarted",
   csvFile = "csvFile",
   org = "org",
   sourceOrg = "sourceOrg",
   targetOrg = "targetOrg",
   scriptFile = "scriptFile",
-  skipped = "skipped",
   noRecords = "noRecords",
   insert = "insert",
   update = "update",
-  delete = "delete",
   personContact = "personContact",
-  coreManifest = "coreManifest",
   userManifest = "userManifest",
-  loaded = "loaded",
   cantLoad = "cantLoad",
   global = "global",
   canNotLoadModule = "canNotLoadModule",
@@ -80,7 +76,6 @@ export enum RESOURCES {
   commandAbortedByUnexpectedError = "commandAbortedByUnexpectedError",
   commandUnexpectedErrorResult = "commandUnexpectedErrorResult",
 
-
   commandInProgress = "commandInProgress",
   packageScript = "packageScript",
   pluginVersion = "pluginVersion",
@@ -100,7 +95,6 @@ export enum RESOURCES {
   tryingToConnectCLI = "tryingToConnectCLI",
   successfullyConnected = "successfullyConnected",
   tryingToConnectCLIFailed = "tryingToConnectCLIFailed",
-  sourceTargetCouldNotBeTheSame = "sourceTargetCouldNotBeTheSame",
   youCantImportAndExportIntoCSVFile = "youCantImportAndExportIntoCSVFile",
   accessToOrgExpired = "accessToOrgExpired",
   MalformedQuery = "MalformedQuery",
@@ -415,7 +409,7 @@ export class Logger implements IAppLogger {
 
       // Command result stdout
       this.log(String(message),
-        LOG_MESSAGE_TYPE.STRING,
+        status != COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR ? LOG_MESSAGE_TYPE.SUCCESS : LOG_MESSAGE_TYPE.ERROR,
         LOG_MESSAGE_VERBOSITY.MINIMAL,
         ...tokens);
 
@@ -425,7 +419,7 @@ export class Logger implements IAppLogger {
           this.getResourceString(
             RESOURCES.loggerStackTraceString,
             stack),
-          LOG_MESSAGE_TYPE.STRING,
+          LOG_MESSAGE_TYPE.ERROR,
           LOG_MESSAGE_VERBOSITY.MINIMAL
         );
       }
@@ -437,7 +431,7 @@ export class Logger implements IAppLogger {
           this._commandFullName,
           String(status),
           statusString),
-        status == COMMAND_EXIT_STATUSES.SUCCESS ? LOG_MESSAGE_TYPE.STRING : LOG_MESSAGE_TYPE.ERROR,
+        status != COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR ? LOG_MESSAGE_TYPE.SUCCESS : LOG_MESSAGE_TYPE.ERROR,
         LOG_MESSAGE_VERBOSITY.MINIMAL
       );
 
@@ -446,11 +440,14 @@ export class Logger implements IAppLogger {
         this.getResourceString(
           RESOURCES.loggerTimeElapsedString,
           timeElapsedString),
-        LOG_MESSAGE_TYPE.STRING,
+        status != COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR ? LOG_MESSAGE_TYPE.SUCCESS : LOG_MESSAGE_TYPE.ERROR,
         LOG_MESSAGE_VERBOSITY.MINIMAL
       );
 
     }
+
+    this._uxLogger.log("\x1b[37m");
+
   }
 
 
@@ -463,6 +460,10 @@ export class Logger implements IAppLogger {
   ): void {
 
     logMessageType = logMessageType || LOG_MESSAGE_TYPE.STRING;
+    const isSuccess = logMessageType == LOG_MESSAGE_TYPE.SUCCESS;
+    const isFailure = logMessageType == LOG_MESSAGE_TYPE.FAILURE;
+    logMessageType = isSuccess || isFailure ? LOG_MESSAGE_TYPE.STRING : logMessageType;
+
     verbosity = typeof verbosity == 'undefined' ? LOG_MESSAGE_VERBOSITY.NORMAL : verbosity;
 
     if (typeof message == "undefined" || message == null) {
@@ -490,24 +491,32 @@ export class Logger implements IAppLogger {
 
     const date = message ? this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date())) : '';
     let logMessage: string;
+    let foreColor = "";
+
+    switch (logMessageType) {
+      default: foreColor = isSuccess ? "\x1b[32m" : isFailure ? "\x1b[35m" : "\x1b[36m"; break;
+      case LOG_MESSAGE_TYPE.HEADER: foreColor = "\x1b[38m"; break;
+      case LOG_MESSAGE_TYPE.ERROR: foreColor = "\x1b[31m"; break;
+      case LOG_MESSAGE_TYPE.WARN: foreColor = "\x1b[33m"; break;
+    }
 
     switch (logMessageType) {
 
       default:
         logMessage = this.getResourceString(RESOURCES.loggerInfoString, date, message as string);
-        allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+        allowWriteLogsToSTdOut && this._uxLogger.log(foreColor + logMessage);
         break;
 
       case LOG_MESSAGE_TYPE.ERROR:
         logMessage = this.getResourceString(RESOURCES.loggerErrorString, date, message as string);
-        allowWriteLogsToSTdOut && this._uxLogger.log(logMessage);
+        allowWriteLogsToSTdOut && this._uxLogger.error(foreColor + logMessage);
         break;
 
       case LOG_MESSAGE_TYPE.WARN:
         logMessage = this.getResourceString(RESOURCES.loggerWarnString, date, message as string);
         allowWriteLogsToSTdOut
           && (allowWriteLogsToCache = allowWriteLogsToCache && !this._noWarningsFlag)
-          && this._uxLogger.log(logMessage);
+          && this._uxLogger.warn(foreColor + logMessage);
         break;
 
       case LOG_MESSAGE_TYPE.TABLE:
@@ -530,7 +539,7 @@ export class Logger implements IAppLogger {
 
       case LOG_MESSAGE_TYPE.HEADER:
         logMessage = String(message).toUpperCase();
-        allowWriteLogsToSTdOut && this._uxLogger.styledHeader(message);
+        allowWriteLogsToSTdOut && this._uxLogger.styledHeader(foreColor + message);
         break;
 
     }
@@ -617,7 +626,7 @@ export class Logger implements IAppLogger {
       } else {
         this.stopSpinner();
         result = await this._uxLogger.prompt(
-          params.message,
+          "\x1b[42m" + params.message,
           {
             default: params.default,
             timeout: params.timeout
@@ -699,7 +708,9 @@ export class Logger implements IAppLogger {
 
 export enum LOG_MESSAGE_TYPE {
   STRING = 30,
+  SUCCESS = 31,
   ERROR = 50,
+  FAILURE = 51,
   WARN = 40,
   TABLE = 31,
   JSON = 32,
