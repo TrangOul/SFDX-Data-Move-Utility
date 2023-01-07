@@ -1,6 +1,6 @@
 {
-    "commandDescription": "The Salesforce DX data migration tool.\nPopulate your org (scratch/development/sandbox/production) with data imported from another org or CSV file.\nRefer https://github.com/forcedotcom/SFDX-Data-Move-Utility for the detailed help information.",
-    "commandLongDescription": "Populate your org (scratch/development/sandbox/production) with data imported from another org or CSV file.\nRefer https://github.com/forcedotcom/SFDX-Data-Move-Utility for the detailed help information.",
+    "commandDescription": "The advanced Salesforce Data Loader SFDX plugin.\nPopulate your org (scratch/development/sandbox/production) with data imported from another org or CSV file.\nRefer https://help.sfdmu.com for the detailed help information.",
+    "commandLongDescription": "Populate your org (scratch/development/sandbox/production) with data imported from another org or CSV file.\nRefer https://help.sfdmu.com for the detailed help information.",
 
     "sourceusernameFlagDescription": "Source org username/alias or 'csvfile' for csv load",
     "sourceusernameFlagLongDescription": "Provide username or alias for the source org or 'csvfile' if CSV files are used as data source.",

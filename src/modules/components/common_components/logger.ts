@@ -460,9 +460,12 @@ export class Logger implements IAppLogger {
   ): void {
 
     logMessageType = logMessageType || LOG_MESSAGE_TYPE.STRING;
+
     const isSuccess = logMessageType == LOG_MESSAGE_TYPE.SUCCESS;
     const isFailure = logMessageType == LOG_MESSAGE_TYPE.FAILURE;
-    logMessageType = isSuccess || isFailure ? LOG_MESSAGE_TYPE.STRING : logMessageType;
+    const isStdout = logMessageType == LOG_MESSAGE_TYPE.STDOUT;
+
+    logMessageType = isSuccess || isFailure || isStdout ? LOG_MESSAGE_TYPE.STRING : logMessageType;
 
     verbosity = typeof verbosity == 'undefined' ? LOG_MESSAGE_VERBOSITY.NORMAL : verbosity;
 
@@ -477,8 +480,10 @@ export class Logger implements IAppLogger {
       || logMessageType == LOG_MESSAGE_TYPE.ERROR);
 
     const allowWriteLogsToSTdOut = allowWriteLogsToCache
-      && (!this._jsonFlag || this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON)
-      && this._uxLoggerVerbosity != LOG_MESSAGE_VERBOSITY.NONE;
+      && (!this._jsonFlag
+        || this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON)
+      && this._uxLoggerVerbosity != LOG_MESSAGE_VERBOSITY.NONE
+      || isStdout;
 
     const allowWriteLogsToFile = this._filelogFlag
       && logMessageType >= this._uxLoggerLevel
@@ -709,8 +714,9 @@ export class Logger implements IAppLogger {
 export enum LOG_MESSAGE_TYPE {
   STRING = 30,
   SUCCESS = 31,
+  FAILURE = 32,
+  STDOUT = 33,
   ERROR = 50,
-  FAILURE = 51,
   WARN = 40,
   TABLE = 31,
   JSON = 32,
