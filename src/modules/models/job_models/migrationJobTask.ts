@@ -438,7 +438,7 @@ export default class MigrationJobTask {
                     "Parent sObject": sField.parentLookupObject.name,
                     "Parent field": parentExternalId,
                     "Parent value": null,
-                    "Error": self.logger.getResourceString(RESOURCES.missingParentRecordForGivenLookupValue)
+                    "Error": self.logger.getResourceString(RESOURCES.missingParentLookupRecords)
                   });
                 }
 
@@ -490,7 +490,7 @@ export default class MigrationJobTask {
                     "Parent sObject": sField.parentLookupObject.name,
                     "Parent field": "Id",
                     "Parent value": null,
-                    "Error": self.logger.getResourceString(RESOURCES.missingParentRecordForGivenLookupValue)
+                    "Error": self.logger.getResourceString(RESOURCES.missingParentLookupRecords)
                   });
                 }
                 csvRow[columnName__r] = cachedCSVContent.nextId;
@@ -742,7 +742,7 @@ export default class MigrationJobTask {
         if (this.scriptObject.parsedQuery.limit) {
           this.sourceTotalRecorsCount = Math.min(this.sourceTotalRecorsCount, this.scriptObject.parsedQuery.limit);
         }
-        this.logger.infoNormal(RESOURCES.totalRecordsAmount, this.sObjectName,
+        this.logger.infoNormal(RESOURCES.totalRecordsAmountByQueryString, this.sObjectName,
           String(this.sourceTotalRecorsCount),
           this.sourceData.resourceString_Source_Target);
       } catch (ex) {
@@ -760,7 +760,7 @@ export default class MigrationJobTask {
         if (this.scriptObject.parsedQuery.limit) {
           this.targetTotalRecorsCount = Math.min(this.targetTotalRecorsCount, this.scriptObject.parsedQuery.limit);
         }
-        this.logger.infoNormal(RESOURCES.totalRecordsAmount, this.sObjectName,
+        this.logger.infoNormal(RESOURCES.totalRecordsAmountByQueryString, this.sObjectName,
           String(this.targetTotalRecorsCount),
           this.targetData.resourceString_Source_Target);
       } catch (ex) {
@@ -794,7 +794,7 @@ export default class MigrationJobTask {
       return false;
     }
     // Deleting
-    this.logger.infoVerbose(RESOURCES.deletingNRecordsWillBeDeleted, this.sObjectName, String(queryResult.length));
+    this.logger.infoVerbose(RESOURCES.amountOfRecordsToDelete, this.sObjectName, String(queryResult.length));
     let recordsToDelete = queryResult.map(x => {
       return {
         Id: x["Id"]
@@ -832,7 +832,7 @@ export default class MigrationJobTask {
       }
     }).filter(record => !!record);
 
-    this.logger.infoVerbose(RESOURCES.deletingNRecordsWillBeDeleted, this.sObjectName, String(recordsToDelete.length));
+    this.logger.infoVerbose(RESOURCES.amountOfRecordsToDelete, this.sObjectName, String(recordsToDelete.length));
 
     // Delete records
     if (recordsToDelete.length == 0) {
@@ -1073,7 +1073,7 @@ export default class MigrationJobTask {
       // Person Accounts/Contacts only /////////////
       if (this.data.isPersonAccountOrContact) {
         // Create data ****
-        this.logger.infoVerbose(RESOURCES.updatePersonAccounts, this.sObjectName);
+        this.logger.infoVerbose(RESOURCES.updatePersonAccountsAndContacts, this.sObjectName);
         data = await ___createUpdateData(true);
         if (data.missingParentLookups.length > 0) {
           // Warn user
@@ -1299,7 +1299,7 @@ export default class MigrationJobTask {
       }
 
       // Deleting ////////
-      self.logger.infoVerbose(RESOURCES.deletingNRecordsWillBeDeleted, self.sObjectName, String(self.sourceData.records.length));
+      self.logger.infoVerbose(RESOURCES.amountOfRecordsToDelete, self.sObjectName, String(self.sourceData.records.length));
 
       let recordsToDelete = self.sourceData.records.map(record => {
         return {
@@ -1337,7 +1337,7 @@ export default class MigrationJobTask {
 
       // Inserting ////////
       if (data.recordsToInsert.length > 0) {
-        self.logger.infoVerbose(RESOURCES.updatingTargetNRecordsWillBeUpdated,
+        self.logger.infoVerbose(RESOURCES.amountOfRecordsTo,
           self.sObjectName,
           self.logger.getResourceString(RESOURCES.insert),
           String((data.recordsToInsert.length)));
@@ -1368,7 +1368,7 @@ export default class MigrationJobTask {
 
       // Updating ///////
       if (data.recordsToUpdate.length > 0) {
-        self.logger.infoVerbose(RESOURCES.updatingTargetNRecordsWillBeUpdated,
+        self.logger.infoVerbose(RESOURCES.amountOfRecordsTo,
           self.sObjectName,
           self.logger.getResourceString(RESOURCES.update),
           String((data.recordsToUpdate.length)));

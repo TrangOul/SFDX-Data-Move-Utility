@@ -275,11 +275,11 @@ export default class MigrationJob {
       if (!this.script.importCSVFilesAsIs) {
 
         // Validate and repair source csv files
-        this.logger.infoMinimal(RESOURCES.validatingAndFixingSourceCSVFiles);
+        this.logger.infoMinimal(RESOURCES.processingCsvFiles);
 
         await this._validateAndRepairSourceCSVFiles();
 
-        this.logger.infoVerbose(RESOURCES.validationAndFixingsourceCSVFilesCompleted);
+        this.logger.infoVerbose(RESOURCES.validationCsvFileCompleted);
 
         if (this.script.validateCSVFilesOnly) {
           // Succeeded exit
@@ -290,7 +290,7 @@ export default class MigrationJob {
         this.clearCachedCSVData();
 
       } else {
-        this.logger.infoMinimal(RESOURCES.validatingSourceCSVFilesSkipped);
+        this.logger.infoMinimal(RESOURCES.processingCsvFilesSkipped);
       }
     }
   }
@@ -304,7 +304,7 @@ export default class MigrationJob {
   async getTotalRecordsCountAsync(): Promise<void> {
 
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.headerMinimal(RESOURCES.gettingRecordsCount);
+    this.logger.headerMinimal(RESOURCES.analysingData);
 
     for (let index = 0; index < this.tasks.length; index++) {
       const task = this.tasks[index];
@@ -463,7 +463,7 @@ export default class MigrationJob {
     this.logger.headerNormal(RESOURCES.fetchingSummary);
     for (let index = 0; index < this.queryTasks.length; index++) {
       const task = this.queryTasks[index];
-      this.logger.infoNormal(RESOURCES.queryingTotallyFetched,
+      this.logger.infoNormal(RESOURCES.amuntOfRetrievedRecords,
         task.sObjectName,
         String(task.sourceData.idRecordsMap.size + "/" + task.targetData.idRecordsMap.size));
     }
@@ -613,7 +613,7 @@ export default class MigrationJob {
       await Common.abortWithPrompt(
         RESOURCES.missingParentLookupsPrompt,
         self.script.promptOnMissingParentObjects,
-        RESOURCES.continueTheJobPrompt,
+        RESOURCES.continueTheJob,
         "",
         async () => {
           await self.saveCSVFileAsync(CONSTANTS.MISSING_PARENT_LOOKUP_RECORDS_ERRORS_FILENAME, allMissingParentLookups, false);
@@ -711,7 +711,7 @@ export default class MigrationJob {
    */
   async saveCSVFileAsync(fileName: string, data: Array<any>, alwaysCreateFile: boolean = true): Promise<void> {
     let filePath = path.join(this.script.basePath, fileName);
-    this.logger.infoVerbose(RESOURCES.writingToCSV, filePath);
+    this.logger.infoVerbose(RESOURCES.writingCsvFile, filePath);
     await Common.writeCsvFileAsync(filePath, data, alwaysCreateFile);
   }
 
@@ -727,7 +727,7 @@ export default class MigrationJob {
       const filePath = filePaths[i];
       if (this.cachedCSVContent.updatedFilenames.has(filePath)) {
         let csvData = this.cachedCSVContent.csvDataCacheMap.get(filePath);
-        this.logger.infoVerbose(RESOURCES.writingToCSV, filePath);
+        this.logger.infoVerbose(RESOURCES.writingCsvFile, filePath);
         await Common.writeCsvFileAsync(filePath, [...csvData.values()], true);
       }
     }
@@ -982,17 +982,17 @@ export default class MigrationJob {
         await ___promptToAbort();
       } else {
         await self.saveCSVFileAsync(CONSTANTS.CSV_ISSUES_ERRORS_FILENAME, self.csvIssues);
-        this.logger.warn(RESOURCES.issuesFoundDuringCSVValidation, String(this.csvIssues.length), CONSTANTS.CSV_ISSUES_ERRORS_FILENAME);
+        this.logger.warn(RESOURCES.incorrectCsvFiles, String(this.csvIssues.length), CONSTANTS.CSV_ISSUES_ERRORS_FILENAME);
       }
     } else {
-      this.logger.infoVerbose(RESOURCES.noIssuesFoundDuringCSVValidation);
+      this.logger.infoVerbose(RESOURCES.correctCsvFiles);
     }
 
     async function ___promptToAbort(): Promise<void> {
       await Common.abortWithPrompt(
-        RESOURCES.issuesFoundDuringCSVValidation,
+        RESOURCES.incorrectCsvFiles,
         self.script.promptOnIssuesInCSVFiles,
-        RESOURCES.continueTheJobPrompt,
+        RESOURCES.continueTheJob,
         "",
         async () => {
           // Report csv issues

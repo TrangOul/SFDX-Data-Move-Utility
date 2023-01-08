@@ -181,7 +181,7 @@ export default class ScriptOrg implements IAppScriptOrg, ISfdmuRunCustomAddonScr
       try {
         await apiSf.identityAsync();
       } catch (ex) {
-        throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.accessToOrgExpired, this.name));
+        throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.accessTokenExpired, this.name));
       }
 
       // Get org info
@@ -207,11 +207,11 @@ export default class ScriptOrg implements IAppScriptOrg, ISfdmuRunCustomAddonScr
 
       if (!this.isConnected) {
         // Connect with SFDX
-        this.script.logger.infoNormal(RESOURCES.tryingToConnect, this.name);
+        this.script.logger.infoNormal(RESOURCES.connectingToOrg, this.name);
         let processResult = Common.execSfdx("force:org:display --json", this.name);
         let orgInfo = this._parseForceOrgDisplayResult(processResult);
         if (!orgInfo || !orgInfo.isConnected) {
-          throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.connectionFailed, this.name));
+          throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.connectingFailed, this.name));
         } else {
           Object.assign(this, {
             accessToken: orgInfo.AccessToken,

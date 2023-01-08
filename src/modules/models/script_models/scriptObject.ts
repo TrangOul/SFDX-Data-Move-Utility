@@ -559,7 +559,7 @@ export default class ScriptObject implements ISfdmuRunScriptObject {
 
           // Retrieve sobject metadata
           let apisf = new Sfdx(this.script.sourceOrg);
-          this.script.logger.infoNormal(RESOURCES.gettingMetadataForSObject, this.name, this.script.logger.getResourceString(RESOURCES.source));
+          this.script.logger.infoNormal(RESOURCES.retrievingObjectMetadata, this.name, this.script.logger.getResourceString(RESOURCES.source));
 
           this.sourceSObjectDescribe = await apisf.describeSObjectAsync(this.name);
           this._updateSObjectDescribe(this.sourceSObjectDescribe);
@@ -581,7 +581,7 @@ export default class ScriptObject implements ISfdmuRunScriptObject {
           if (ex instanceof CommandInitializationError) {
             throw ex;
           }
-          throw new OrgMetadataError(this.script.logger.getResourceString(RESOURCES.objectSourceDoesNotExist, this.name));
+          throw new OrgMetadataError(this.script.logger.getResourceString(RESOURCES.missingObjectInSource, this.name));
         }
 
       }
@@ -593,7 +593,7 @@ export default class ScriptObject implements ISfdmuRunScriptObject {
 
           // Retrieve sobject metadata
           let apisf = new Sfdx(this.script.targetOrg);
-          this.script.logger.infoNormal(RESOURCES.gettingMetadataForSObject, this.name, this.script.logger.getResourceString(RESOURCES.target));
+          this.script.logger.infoNormal(RESOURCES.retrievingObjectMetadata, this.name, this.script.logger.getResourceString(RESOURCES.target));
 
           this.targetSObjectDescribe = await apisf.describeSObjectAsync(this.name, this.sourceTargetFieldMapping);
           this._updateSObjectDescribe(this.targetSObjectDescribe);
@@ -615,7 +615,7 @@ export default class ScriptObject implements ISfdmuRunScriptObject {
           if (ex instanceof CommandInitializationError) {
             throw ex;
           }
-          throw new OrgMetadataError(this.script.logger.getResourceString(RESOURCES.objectTargetDoesNotExist, this.name));
+          throw new OrgMetadataError(this.script.logger.getResourceString(RESOURCES.missingObjectInTarget, this.name));
         }
       }
 
@@ -946,9 +946,9 @@ export default class ScriptObject implements ISfdmuRunScriptObject {
 
           // Field in the query is missing in the org metadata. Warn user.
           if (isSource)
-            this.script.logger.warn(RESOURCES.fieldNotExistsInSource, this.name, sourceFieldName);
+            this.script.logger.warn(RESOURCES.missingFieldInSource, this.name, sourceFieldName);
           else
-            this.script.logger.warn(RESOURCES.fieldTargetDoesExistInTarget, this.name, sourceFieldName);
+            this.script.logger.warn(RESOURCES.missingFieldInTarget, this.name, sourceFieldName);
 
           // Remove missing field from the query
           Common.removeBy(this.parsedQuery.fields, "field", sourceFieldName);

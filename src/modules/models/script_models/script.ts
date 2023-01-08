@@ -255,7 +255,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
 
     if (this.runInfo.sourceUsername.toLowerCase() == CONSTANTS.CSV_FILES_SOURCENAME
       && this.runInfo.targetUsername.toLowerCase() == CONSTANTS.CSV_FILES_SOURCENAME) {
-      throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.youCantImportAndExportIntoCSVFile));
+      throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.cannotMigrateFile2File));
     }
 
     if (this.simulationMode) {
@@ -284,7 +284,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
         if (this.excludedObjects.indexOf(object.name) < 0) {
           this.excludedObjects.push(object.name);
         }
-        this.logger.infoVerbose(RESOURCES.objectWillBeExcluded, object.name);
+        this.logger.infoVerbose(RESOURCES.objectIsExcluded, object.name);
       }
       return included;
     });
@@ -390,14 +390,14 @@ export default class Script implements IAppScript, ISfdmuRunScript {
   async processObjectsMetadataAsync(): Promise<void> {
 
     this.logger.infoVerbose(RESOURCES.newLine);
-    this.logger.headerMinimal(RESOURCES.gettingOrgMetadata);
+    this.logger.headerMinimal(RESOURCES.retrievingOrgMatadata);
 
     // Describe all objects
     for (let objectIndex = 0; objectIndex < this.objects.length; objectIndex++) {
 
       const thisObject = this.objects[objectIndex];
 
-      this.logger.infoVerbose(RESOURCES.processingSObject, thisObject.name);
+      this.logger.infoVerbose(RESOURCES.processingObject, thisObject.name);
 
       await thisObject.describeAsync();
     }
@@ -411,7 +411,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
     for (let objectIndex = this.objects.length - 1; objectIndex >= 0; objectIndex--) {
 
       const thisObject = this.objects[objectIndex];
-      this.logger.infoVerbose(RESOURCES.processingSObject, thisObject.name);
+      this.logger.infoVerbose(RESOURCES.processingObject, thisObject.name);
 
       const fieldsInQuery = [...thisObject.fieldsInQuery];
       for (let fieldIndex = 0; fieldIndex < fieldsInQuery.length; fieldIndex++) {
@@ -578,7 +578,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
   async describeExtraObjectAsync(objectName: string): Promise<void> {
     const org = this.sourceOrg.media == DATA_MEDIA_TYPE.Org ? this.sourceOrg : this.targetOrg;
     const messageSource = this.sourceOrg.media == DATA_MEDIA_TYPE.Org ? RESOURCES.source : RESOURCES.target;
-    this.logger.infoNormal(RESOURCES.gettingMetadataForSObject, objectName, this.logger.getResourceString(messageSource));
+    this.logger.infoNormal(RESOURCES.retrievingObjectMetadata, objectName, this.logger.getResourceString(messageSource));
     let apisf = new Sfdx(org);
     const description = await apisf.describeSObjectAsync(objectName);
     this.extraSObjectDescriptions.set(objectName, description);
@@ -597,14 +597,14 @@ export default class Script implements IAppScript, ISfdmuRunScript {
       if (this.sourceOrg.media == DATA_MEDIA_TYPE.Org && this.sourceOrg.isPersonAccountEnabled
         && this.targetOrg.media == DATA_MEDIA_TYPE.Org && !this.sourceOrg.isPersonAccountEnabled) {
         // Missing Person Account support in the Target
-        throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.needBothOrgsToSupportPersonAccounts,
+        throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.personAccountSupportWarning,
           this.logger.getResourceString(RESOURCES.sourceOrg)));
       }
       // Verify source org
       if (this.sourceOrg.media == DATA_MEDIA_TYPE.Org && !this.sourceOrg.isPersonAccountEnabled
         && this.targetOrg.media == DATA_MEDIA_TYPE.Org && this.sourceOrg.isPersonAccountEnabled) {
         // Missing Person Account support in the Source
-        throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.needBothOrgsToSupportPersonAccounts,
+        throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.personAccountSupportWarning,
           this.logger.getResourceString(RESOURCES.target)));
       }
     }
