@@ -108,12 +108,12 @@ export class RunCommand {
       }
 
       this.logger.infoVerbose(RESOURCES.newLine);
-      this.logger.headerMinimal(RESOURCES.loadingPackageFile);
+      this.logger.headerMinimal(RESOURCES.loadingExportJson);
 
       try {
         json = fs.readFileSync(this.filePath, 'utf8');
       } catch (ex: any) {
-        throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.scriptJSONReadError, ex.message));
+        throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.exportJsonFileLoadError, ex.message));
       }
     }
 
@@ -128,7 +128,7 @@ export class RunCommand {
       jsonObject.objects = [];
       this.script = plainToClass(models.Script, jsonObject);
     } catch (ex: any) {
-      throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.scriptJSONFormatError, ex.message));
+      throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.incorrectExportJsonFormat, ex.message));
     }
 
     return this.script.objectSets.length;

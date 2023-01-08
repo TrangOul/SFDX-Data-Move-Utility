@@ -236,7 +236,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
 
     // Message about the running version
     this.logger.objectMinimal({ [this.logger.getResourceString(RESOURCES.runningVersion)]: pinfo.version });
-    this.logger.objectMinimal({ [this.logger.getResourceString(RESOURCES.runningSfdmuRunAddOnVersion)]: pinfo.runAddOnApiInfo.version });
+    this.logger.objectMinimal({ [this.logger.getResourceString(RESOURCES.runningAddOnApiVersion)]: pinfo.runAddOnApiInfo.version });
     this.logger.infoVerbose(RESOURCES.newLine);
 
     // Create add on manager
@@ -259,7 +259,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
     }
 
     if (this.simulationMode) {
-      this.logger.infoMinimal(RESOURCES.scriptRunInSimulationMode);
+      this.logger.infoMinimal(RESOURCES.runningInSimulationMode);
     }
 
     // Fix object values
@@ -291,7 +291,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
 
     // Check objects length
     if (this.objects.length == 0) {
-      throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.noObjectsDefinedInPackageFile));
+      throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.noObjectsToProcess));
     }
 
     // Make each object appear only once in the script
@@ -300,7 +300,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
     // Check object operations spelling
     this.objects.forEach(object => {
       if (ScriptObject.getOperation(object.operation) == OPERATION.Unknown) {
-        throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.invalidObjectOperation,
+        throw new CommandInitializationError(this.logger.getResourceString(RESOURCES.invalidOperation,
           (object.operation || '').toString(), object.name));
       }
     });
@@ -565,7 +565,7 @@ export default class Script implements IAppScript, ISfdmuRunScript {
       // Warn user if there are no any fields to update
       if (object.hasToBeUpdated && object.fieldsToUpdate.length == 0
         && !(object.fieldsInQuery.length == 1 && object.fieldsInQuery[0] == "Id")) {
-        this.logger.warn(RESOURCES.noUpdateableFieldsInTheSObject, object.name);
+        this.logger.warn(RESOURCES.noFieldsToUpdate, object.name);
       }
     });
 

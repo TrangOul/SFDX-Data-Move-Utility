@@ -140,7 +140,7 @@ export default class ScriptOrg implements IAppScriptOrg, ISfdmuRunCustomAddonScr
       let response = (await this.script.logger.textPromptAsync(promptMessage)).toLowerCase();
       if (response != domain) {
         // Abort the job
-        throw new CommandAbortedByUserError(this.script.logger.getResourceString(RESOURCES.actionIsNotPermitted));
+        throw new CommandAbortedByUserError(this.script.logger.getResourceString(RESOURCES.actionNotPermitted));
       }
     }
   }

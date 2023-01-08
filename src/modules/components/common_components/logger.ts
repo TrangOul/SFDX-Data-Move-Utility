@@ -36,58 +36,57 @@ export enum RESOURCES {
   insert = "insert",
   update = "update",
   personContact = "personContact",
-  userManifest = "userManifest",
+  customAddon = "customAddon",
   cantLoad = "cantLoad",
   global = "global",
-  canNotLoadModule = "canNotLoadModule",
-  actionIsNotPermitted = "actionIsNotPermitted",
+  cantLoadModule = "cantLoadModule",
+  actionNotPermitted = "actionNotPermitted",
 
   defaultPromptOptions = "defaultPromptOptions",
   defaultNopromptOption = "defaultNopromptOption",
   defaultPromptNoOption = "defaultPromptNoOption",
-  promptMessageFormat = "promptMessageFormat",
-  enterTextPromptMessageFormat = "enterTextPromptMessageFormat",
+  userConfirmTemplate = "userConfirmTemplate",
+  userTextInputTemplate = "userTextInputTemplate",
 
-  loggerDateFormat = "loggerDateFormat",
-  loggerInfoString = "loggerInfoString",
-  loggerWarnString = "loggerWarnString",
-  loggerErrorString = "loggerErrorString",
+  formattedDateLogTemplate = "formattedDateLogTemplate",
+  infoLogTemplate = "infoLogTemplate",
+  warnLogTemplate = "warnLogTemplate",
+  errorLogTemplate = "errorLogTemplate",
 
-  loggerStackTraceString = "loggerStackTraceString",
-  loggerTimeElapsedString = "loggerTimeElapsedString",
-  loggerCommandStartedString = "loggerCommandStartedString",
-  loggerCommandCompletedString = "loggerCommandCompletedString",
+  traceLogTemplate = "traceLogTemplate",
+  timeElapsedLogTemplate = "timeElapsedLogTemplate",
+  commandStartTemplate = "commandStartTemplate",
+  commandFinishTemplate = "commandFinishTemplate",
 
-  fileLoggerInfoString = "fileLoggerInfoString",
-  fileLoggerWarnSring = "fileLoggerWarnSring",
-  fileLoggerErrorSring = "fileLoggerErrorSring",
+  infoFileLogTemplate = "infoFileLogTemplate",
+  warnFileLogTemplate = "warnFileLogTemplate",
+  errorFileLogTemplate = "errorFileLogTemplate",
 
-  successfullyCompletedResult = "successfullyCompletedResult",
+  commandSucceededResult = "commandSucceededResult",
   commandInitializationErrorResult = "commandInitializationErrorResult",
-  orgMetadataErrorResult = "orgMetadataErrorResult",
+  commandOrgMetadataErrorResult = "commandOrgMetadataErrorResult",
 
   commandExecutionErrorResult = "commandExecutionErrorResult",
-  commandUnresolvableWarningResult = "commandUnresolvableWarningResult",
+  commandAbortedDueWarningErrorResult = "commandAbortedDueWarningErrorResult",
   commandAbortedByUserErrorResult = "commandAbortedByUserErrorResult",
   commandAbortedByAddOnErrorResult = "commandAbortedByAddOnErrorResult",
-  commandAbortedByUnexpectedError = "commandAbortedByUnexpectedError",
-  commandUnexpectedErrorResult = "commandUnexpectedErrorResult",
+  commandAbortedDueUnexpectedErrorResult = "commandAbortedDueUnexpectedErrorResult",
 
   commandInProgress = "commandInProgress",
   packageScript = "packageScript",
   pluginVersion = "pluginVersion",
   runningVersion = "runningVersion",
-  runningSfdmuRunAddOnVersion = "runningSfdmuRunAddOnVersion",
+  runningAddOnApiVersion = "runningAddOnApiVersion",
   workingPathDoesNotExist = "workingPathDoesNotExist",
   packageFileDoesNotExist = "packageFileDoesNotExist",
-  loadingPackageFile = "loadingPackageFile",
+  loadingExportJson = "loadingExportJson",
   objectWillBeExcluded = "objectWillBeExcluded",
-  noObjectsDefinedInPackageFile = "noObjectsDefinedInPackageFile",
-  invalidObjectOperation = "invalidObjectOperation",
-  noUpdateableFieldsInTheSObject = "noUpdateableFieldsInTheSObject",
-  scriptJSONFormatError = "scriptJSONFormatError",
-  scriptJSONReadError = "scriptJSONReadError",
-  scriptRunInSimulationMode = "scriptRunInSimulationMode",
+  noObjectsToProcess = "noObjectsToProcess",
+  invalidOperation = "invalidOperation",
+  noFieldsToUpdate = "noFieldsToUpdate",
+  incorrectExportJsonFormat = "incorrectExportJsonFormat",
+  exportJsonFileLoadError = "exportJsonFileLoadError",
+  runningInSimulationMode = "runningInSimulationMode",
 
   tryingToConnectCLI = "tryingToConnectCLI",
   successfullyConnected = "successfullyConnected",
@@ -114,8 +113,7 @@ export enum RESOURCES {
   theExternalIdNotFoundInTheQuery = "theExternalIdNotFoundInTheQuery",
 
   loadingCoreAddonManifestFile = "loadingCoreAddonManifestFile",
-  loadingAddon = "loadingAddon",
-  missingNecessaryComponent = "missingNecessaryComponent",
+  loadingAddonModule = "loadingAddonModule",
 
   dataMigrationProcessStarted = "dataMigrationProcessStarted",
   buildingMigrationStaregy = "buildingMigrationStaregy",
@@ -241,20 +239,20 @@ class FileLogger {
 
   log(message: string, omitDate?: boolean) {
     message = message || "";
-    const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
-    fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerInfoString, [date, message]) : '\n');
+    const date = !omitDate && this.resources.getMessage(RESOURCES.formattedDateLogTemplate, [Common.formatDateTimeShort(new Date())]) || '';
+    fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.infoFileLogTemplate, [date, message]) : '\n');
   }
 
   warn(message: string, omitDate?: boolean) {
     message = message || "";
-    const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
-    fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerWarnSring, [date, message]) : '\n')
+    const date = !omitDate && this.resources.getMessage(RESOURCES.formattedDateLogTemplate, [Common.formatDateTimeShort(new Date())]) || '';
+    fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.warnFileLogTemplate, [date, message]) : '\n')
   }
 
   error(message: string, omitDate?: boolean) {
     message = message || "";
-    const date = !omitDate && this.resources.getMessage(RESOURCES.loggerDateFormat, [Common.formatDateTimeShort(new Date())]) || '';
-    fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.fileLoggerErrorSring, [date, message]) : '\n');
+    const date = !omitDate && this.resources.getMessage(RESOURCES.formattedDateLogTemplate, [Common.formatDateTimeShort(new Date())]) || '';
+    fs.appendFileSync(this.fileName, message.trim() ? this.resources.getMessage(RESOURCES.errorFileLogTemplate, [date, message]) : '\n');
   }
 
 }
@@ -358,7 +356,7 @@ export class Logger implements IAppLogger {
   commandStartMessage(): void {
     this.startSpinner();
     this.log(
-      this.getResourceString(RESOURCES.loggerCommandStartedString, this._commandFullName),
+      this.getResourceString(RESOURCES.commandStartTemplate, this._commandFullName),
       LOG_MESSAGE_TYPE.STRING,
       LOG_MESSAGE_VERBOSITY.MINIMAL
     );
@@ -417,7 +415,7 @@ export class Logger implements IAppLogger {
       if (printStackTrace) {
         this.log(
           this.getResourceString(
-            RESOURCES.loggerStackTraceString,
+            RESOURCES.traceLogTemplate,
             stack),
           LOG_MESSAGE_TYPE.ERROR,
           LOG_MESSAGE_VERBOSITY.MINIMAL
@@ -427,7 +425,7 @@ export class Logger implements IAppLogger {
       // "Command finished" to stdout
       this.log(
         this.getResourceString(
-          RESOURCES.loggerCommandCompletedString,
+          RESOURCES.commandFinishTemplate,
           this._commandFullName,
           String(status),
           statusString),
@@ -438,7 +436,7 @@ export class Logger implements IAppLogger {
       // "Time elapsed" to stdout
       this.log(
         this.getResourceString(
-          RESOURCES.loggerTimeElapsedString,
+          RESOURCES.timeElapsedLogTemplate,
           timeElapsedString),
         LOG_MESSAGE_TYPE.STRING,
         LOG_MESSAGE_VERBOSITY.MINIMAL
@@ -494,7 +492,7 @@ export class Logger implements IAppLogger {
 
     const omitDateWhenWriteLogsToFile = this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON;
 
-    const date = message && !isStdoutOnly ? this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date())) : '';
+    const date = message && !isStdoutOnly ? this.getResourceString(RESOURCES.formattedDateLogTemplate, Common.formatDateTimeShort(new Date())) : '';
     let logMessage: string;
     let foreColor = "";
 
@@ -508,17 +506,17 @@ export class Logger implements IAppLogger {
     switch (logMessageType) {
 
       default:
-        logMessage = this.getResourceString(RESOURCES.loggerInfoString, date, message as string);
+        logMessage = this.getResourceString(RESOURCES.infoLogTemplate, date, message as string);
         allowWriteLogsToSTdOut && this._uxLogger.log(foreColor + logMessage);
         break;
 
       case LOG_MESSAGE_TYPE.ERROR:
-        logMessage = this.getResourceString(RESOURCES.loggerErrorString, date, message as string);
+        logMessage = this.getResourceString(RESOURCES.errorLogTemplate, date, message as string);
         allowWriteLogsToSTdOut && this._uxLogger.error(foreColor + logMessage);
         break;
 
       case LOG_MESSAGE_TYPE.WARN:
-        logMessage = this.getResourceString(RESOURCES.loggerWarnString, date, message as string);
+        logMessage = this.getResourceString(RESOURCES.warnLogTemplate, date, message as string);
         allowWriteLogsToSTdOut
           && (allowWriteLogsToCache = allowWriteLogsToCache && !this._noWarningsFlag)
           && this._uxLogger.warn(foreColor + logMessage);
@@ -607,7 +605,7 @@ export class Logger implements IAppLogger {
 
     params.nopromptDefault = (typeof params.nopromptDefault == 'undefined' ? this.getResourceString(RESOURCES.defaultNopromptOption) : params.nopromptDefault || "").trim();
 
-    const date = this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date()));
+    const date = this.getResourceString(RESOURCES.formattedDateLogTemplate, Common.formatDateTimeShort(new Date()));
 
     params.options = (typeof params.options == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptOptions) : params.options || "").trim();
     params.default = (typeof params.default == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptNoOption) : params.default || "").trim();
@@ -615,7 +613,7 @@ export class Logger implements IAppLogger {
     params.timeout = params.timeout || (params.options ? CONSTANTS.DEFAULT_USER_PROMPT_TIMEOUT_MS : CONSTANTS.DEFAULT_USER_PROMT_TEXT_ENTER_TIMEOUT_MS);
 
     params.message = this.getResourceString(
-      params.options ? RESOURCES.promptMessageFormat : RESOURCES.enterTextPromptMessageFormat,
+      params.options ? RESOURCES.userConfirmTemplate : RESOURCES.userTextInputTemplate,
       params.message,
       params.options);
 

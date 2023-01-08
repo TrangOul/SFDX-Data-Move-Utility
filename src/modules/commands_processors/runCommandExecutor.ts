@@ -115,7 +115,7 @@ export default class RunCommandExecutor {
 
       // Exit - success
       Common.logger.commandFinishMessage(
-        commandResult || RESOURCES.successfullyCompletedResult,
+        commandResult || RESOURCES.commandSucceededResult,
         COMMAND_EXIT_STATUSES.SUCCESS);
 
       runProcess.exitProcess && process.exit(COMMAND_EXIT_STATUSES.SUCCESS);
@@ -128,7 +128,7 @@ export default class RunCommandExecutor {
 
         case SuccessExit:
           Common.logger.commandFinishMessage(
-            RESOURCES.successfullyCompletedResult,
+            RESOURCES.commandSucceededResult,
             COMMAND_EXIT_STATUSES.SUCCESS);
           runProcess.exitProcess && process.exit(COMMAND_EXIT_STATUSES.SUCCESS);
 
@@ -143,7 +143,7 @@ export default class RunCommandExecutor {
 
         case OrgMetadataError:
           Common.logger.commandFinishMessage(
-            RESOURCES.orgMetadataErrorResult,
+            RESOURCES.commandOrgMetadataErrorResult,
             COMMAND_EXIT_STATUSES.ORG_METADATA_ERROR,
             e.stack, e.message);
           runProcess.exitProcess && process.exit(COMMAND_EXIT_STATUSES.ORG_METADATA_ERROR);
@@ -159,7 +159,7 @@ export default class RunCommandExecutor {
 
         case UnresolvableWarning:
           Common.logger.commandFinishMessage(
-            RESOURCES.commandUnresolvableWarningResult,
+            RESOURCES.commandAbortedDueWarningErrorResult,
             COMMAND_EXIT_STATUSES.UNRESOLWABLE_WARNING, e.message);
           runProcess.exitProcess && process.exit(COMMAND_EXIT_STATUSES.UNRESOLWABLE_WARNING);
 
@@ -181,7 +181,7 @@ export default class RunCommandExecutor {
 
         default:
           Common.logger.commandFinishMessage(
-            RESOURCES.commandUnexpectedErrorResult,
+            RESOURCES.commandAbortedDueUnexpectedErrorResult,
             COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR,
             e.stack, e.message);
           runProcess.exitProcess && process.exit(COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR);
