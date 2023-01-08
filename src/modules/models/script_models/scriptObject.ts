@@ -469,7 +469,7 @@ export default class ScriptObject implements ISfdmuRunScriptObject {
       // Parse query string
       this.parsedQuery = this._parseQuery(this.query);
     } catch (ex: any) {
-      throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.MalformedQuery, this.name, this.query, ex));
+      throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.malformedQuery, this.name, this.query, ex));
     }
 
     if (this.operation == OPERATION.Delete && !this.isDeletedFromSourceOperation && !this.deleteByHierarchy) {
@@ -533,7 +533,7 @@ export default class ScriptObject implements ISfdmuRunScriptObject {
         }
         this.deleteQuery = composeQuery(this.parsedDeleteQuery);
       } catch (ex: any) {
-        throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.MalformedDeleteQuery, this.name, this.deleteQuery, ex));
+        throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.malformedDeleteQuery, this.name, this.deleteQuery, ex));
       }
     }
   }
@@ -946,9 +946,9 @@ export default class ScriptObject implements ISfdmuRunScriptObject {
 
           // Field in the query is missing in the org metadata. Warn user.
           if (isSource)
-            this.script.logger.warn(RESOURCES.fieldSourceDoesNtoExist, this.name, sourceFieldName);
+            this.script.logger.warn(RESOURCES.fieldNotExistsInSource, this.name, sourceFieldName);
           else
-            this.script.logger.warn(RESOURCES.fieldTargetDoesNtoExist, this.name, sourceFieldName);
+            this.script.logger.warn(RESOURCES.fieldTargetDoesExistInTarget, this.name, sourceFieldName);
 
           // Remove missing field from the query
           Common.removeBy(this.parsedQuery.fields, "field", sourceFieldName);

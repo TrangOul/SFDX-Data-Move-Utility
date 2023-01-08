@@ -136,7 +136,7 @@ export default class ScriptOrg implements IAppScriptOrg, ISfdmuRunCustomAddonScr
       )
     ) {
       // Prompt the user to allow production modifications
-      let promptMessage = this.script.logger.getResourceString(RESOURCES.productionModificationApprovalPrompt, domain);
+      let promptMessage = this.script.logger.getResourceString(RESOURCES.canModifyPrompt, domain);
       let response = (await this.script.logger.textPromptAsync(promptMessage)).toLowerCase();
       if (response != domain) {
         // Abort the job
@@ -207,11 +207,11 @@ export default class ScriptOrg implements IAppScriptOrg, ISfdmuRunCustomAddonScr
 
       if (!this.isConnected) {
         // Connect with SFDX
-        this.script.logger.infoNormal(RESOURCES.tryingToConnectCLI, this.name);
+        this.script.logger.infoNormal(RESOURCES.tryingToConnect, this.name);
         let processResult = Common.execSfdx("force:org:display --json", this.name);
         let orgInfo = this._parseForceOrgDisplayResult(processResult);
         if (!orgInfo || !orgInfo.isConnected) {
-          throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.tryingToConnectCLIFailed, this.name));
+          throw new CommandInitializationError(this.script.logger.getResourceString(RESOURCES.connectionFailed, this.name));
         } else {
           Object.assign(this, {
             accessToken: orgInfo.AccessToken,

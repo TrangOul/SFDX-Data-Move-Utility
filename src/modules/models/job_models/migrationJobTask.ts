@@ -154,7 +154,7 @@ export default class MigrationJobTask {
           "Parent sObject": null,
           "Parent field": null,
           "Parent value": null,
-          "Error": this.logger.getResourceString(RESOURCES.csvFileIsEmpty)
+          "Error": this.logger.getResourceString(RESOURCES.missingCsvFile)
         });
       }
 
@@ -193,7 +193,7 @@ export default class MigrationJobTask {
             "Parent sObject": null,
             "Parent field": null,
             "Parent value": null,
-            "Error": this.logger.getResourceString(RESOURCES.columnsMissingInCSV)
+            "Error": this.logger.getResourceString(RESOURCES.missingColumnsInCsvFile)
           });
         }
       }
@@ -2010,7 +2010,7 @@ export default class MigrationJobTask {
       case RESULT_STATUSES.ProcessError:
       case RESULT_STATUSES.FailedOrAborted:
         if (apiResult.errorMessage)
-          this.logger.log(RESOURCES.apiOperationProcessError, logMessageType, verbosity, this.sObjectName, this.apiEngine.getStrOperation(), apiResult.errorMessage);
+          this.logger.log(RESOURCES.apiOperationFailedWithMessage, logMessageType, verbosity, this.sObjectName, this.apiEngine.getStrOperation(), apiResult.errorMessage);
         else
           this.logger.log(RESOURCES.apiOperationFailed, logMessageType, verbosity, this.sObjectName, this.apiEngine.getStrOperation());
         break;
