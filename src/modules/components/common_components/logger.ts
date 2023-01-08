@@ -406,7 +406,7 @@ export class Logger implements IAppLogger {
 
       // Command result stdout
       this.log(String(message),
-        status != COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR ? LOG_MESSAGE_TYPE.SUCCESS : LOG_MESSAGE_TYPE.ERROR,
+        status == COMMAND_EXIT_STATUSES.SUCCESS ? LOG_MESSAGE_TYPE.SUCCESS : LOG_MESSAGE_TYPE.ERROR,
         LOG_MESSAGE_VERBOSITY.MINIMAL,
         ...tokens);
 
@@ -428,7 +428,7 @@ export class Logger implements IAppLogger {
           this._commandFullName,
           String(status),
           statusString),
-        status != COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR ? LOG_MESSAGE_TYPE.SUCCESS : LOG_MESSAGE_TYPE.ERROR,
+        status == COMMAND_EXIT_STATUSES.SUCCESS ? LOG_MESSAGE_TYPE.SUCCESS : LOG_MESSAGE_TYPE.ERROR,
         LOG_MESSAGE_VERBOSITY.MINIMAL
       );
 
@@ -437,7 +437,7 @@ export class Logger implements IAppLogger {
         this.getResourceString(
           RESOURCES.loggerTimeElapsedString,
           timeElapsedString),
-        status != COMMAND_EXIT_STATUSES.COMMAND_UNEXPECTED_ERROR ? LOG_MESSAGE_TYPE.SUCCESS : LOG_MESSAGE_TYPE.ERROR,
+        LOG_MESSAGE_TYPE.STRING,
         LOG_MESSAGE_VERBOSITY.MINIMAL
       );
 
@@ -628,7 +628,7 @@ export class Logger implements IAppLogger {
       } else {
         this.stopSpinner();
         result = await this._uxLogger.prompt(
-          "\x1b[42m" + params.message,
+          "\x1b[32m" + params.message,
           {
             default: params.default,
             timeout: params.timeout
@@ -713,12 +713,12 @@ export enum LOG_MESSAGE_TYPE {
   SUCCESS = 31,
   FAILURE = 32,
   STDOUT = 33,
+  TABLE = 34,
+  JSON = 35,
+  OBJECT = 36,
+  HEADER = 37,
   ERROR = 50,
   WARN = 40,
-  TABLE = 31,
-  JSON = 32,
-  OBJECT = 33,
-  HEADER = 34
 }
 
 export enum LOG_MESSAGE_VERBOSITY {
