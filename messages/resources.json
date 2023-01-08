@@ -84,7 +84,7 @@
     "needBothOrgsToSupportPersonAccounts": "The Plugin has detected that only the org % has the Person Account support enabled. For the proper handling of Person Accounts, you must enable PA suport for the both source and target orgs.",
 
     "gettingOrgMetadata": "Getting and analysing object metadata ...",
-    "gettingMetadataForSObject": "Getting metadata for the %s (%s) ...",
+    "gettingMetadataForSObject": "Retrieving metadata of the %s (%s) ...",
     "noExternalKey": "Object %s has no mandatory external Id field definition.",
     "objectSourceDoesNotExist": "The object %s is missing in the Source.",
     "objectTargetDoesNotExist": "The object %s is missing in the Target.",
@@ -96,10 +96,10 @@
     "failedToResolveExternalId" : "Failed to resolve the external Id '%s' for the parent object %s. Child lookup field: %s.%s.",
     "fieldIsNotOfPolymorphicType" : "[WARNING] Object %s: Since the field %s is incorectly defined as a polymorphic field, so the normal lookup field type was used instead.",
     "fieldMissingPolymorphicDeclaration" : "[WARNING] Object %s: Since the field %s is missing declaration of the referenced object type (e.g. %s$Account), so this field was excluded from the process.",
-    "theExternalIdNotFoundInTheQuery": "[INFO] Child lookup %s.%s: Since the external Id field %s which is set for the object %s was not found in the query string of %s, so the field %s will be used as an external Id instead.",
+    "theExternalIdNotFoundInTheQuery": "Child lookup %s.%s: Since the external Id field %s which is set for the object %s was not found in the query string of %s, so the field %s will be used as an external Id instead.",
 
     "dataMigrationProcessStarted": "Preparing data migration job ...",
-    "buildingMigrationStaregy": "Building migration strategy ...",
+    "buildingMigrationStaregy": "Building the migration strategy ...",
 
     "readingCsvFileError": "Error occured while reading from the CSV file %s: %s.",
     "writingCsvFileError": "Error occured while writing to the CSV file %s: %s.",
@@ -124,7 +124,7 @@
     "unableToDeleteCacheDirectory": "Unable to clean-up the cache directory: '%s'. It's probably locked by another application.",
     "canModifyPrompt": "NOTE! The Plugin has detected that you are about to modify the Production org.\nTo confirm that you really want to modify this org, please type: ",
 
-    "preparingJob": "Job preparing has been completed.",
+    "preparingJob": "Preparing of the data migration job has been completed.",
     "executingJob": "Ready to process the data.",
     "executionOrder": "Order of objects to update",
     "queryingOrder": "Order of objects to query",
@@ -147,7 +147,7 @@
     "simulationMode": " (SIMULATION MODE)",
 
     "gettingRecordsCount": "ANALYSING DATA...",
-    "totalRecordsAmount": "{%s} %s records are returned by the original query string of %s.",
+    "totalRecordsAmount": "{%s} The original query string of this object is returning %s records from the %s org.",
 
     "deletingTargetData": "Deleting old data from the Target ...",
     "deletingSourceData": "Deleting data from the Source ...",
@@ -166,7 +166,7 @@
     "mappingQuery": "{%s} Mapping query string ... Target object: %s. Target query string: %s.",
     "mappingSourceRecords": "{%s} Outbound mapping of records to %s ...",
     "mappingTargetRecords": "{%s} Inbound mapping of records from %s ...",
-    "retrievingData": "Retrieving the data from %s ...",
+    "retrievingData": "Retrieving the data (%s) ...",
     "retrievingDataCompleted": "Data retrieval (%s) has been completed.",
     "queryingAll": "{%s} Retrieving the %s data from %s (%s: all records) ...",
     "queryingIn": "{%s} Retrieving the %s data from %s (%s: filtered records) ...",
@@ -179,15 +179,15 @@
     "fetchingSummary": "Data retrieval summary.",
     "apiCallProgress": "In progress... Completed %s records.",
 
-    "updatingTarget": "Updating the Target %s ...",
-    "deletingTarget": "Deleting the Target %s ...",
-    "updatePersonAccounts": "Updating Person Accounts.",
+    "updatingTarget": "Updating the Target (%s) ...",
+    "deletingTarget": "Deleting from the Target (%s) ...",
+    "updatePersonAccounts": "{%s} Updating person Accounts and Contacts ...",
     "updatingTargetNRecordsWillBeUpdated": "{%s} Amount of records to %s: %s.",
     "updatingTargetObjectCompleted": "{%s} The Target has been updated. Totally processed %s records.",
     "updatingTargetCompleted": "The Target (%s) has been updated. Totally processed %s records.",
     "writingToFile": "{%s} Creating the file %s ...",
     "nothingUpdated": "Nothing was updated.",
-    "skippedUpdatesWarning": "{%s} [INFO] %s target records remained untouched, since they do not differ the corresponding source records.",
+    "skippedUpdatesWarning": "{%s} %s target records remained untouched, since they do not differ from the corresponding source records.",
     "missingParentLookupsPrompt": "{%s} %s missing parent lookup records were found. See %s file for the details.",
     "updatingSummary": "Data processing summary.",
     "updatingTotallyUpdated": "{%s} Totally processed %s records.",

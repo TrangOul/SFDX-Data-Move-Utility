@@ -743,7 +743,8 @@ export default class MigrationJobTask {
           this.sourceTotalRecorsCount = Math.min(this.sourceTotalRecorsCount, this.scriptObject.parsedQuery.limit);
         }
         this.logger.infoNormal(RESOURCES.totalRecordsAmount, this.sObjectName,
-          this.sourceData.resourceString_Source_Target, String(this.sourceTotalRecorsCount));
+          String(this.sourceTotalRecorsCount),
+          this.sourceData.resourceString_Source_Target);
       } catch (ex) {
         // Aggregate queries does not suppoted
         this.sourceTotalRecorsCount = this.scriptObject.parsedQuery.limit || 0;
@@ -760,7 +761,8 @@ export default class MigrationJobTask {
           this.targetTotalRecorsCount = Math.min(this.targetTotalRecorsCount, this.scriptObject.parsedQuery.limit);
         }
         this.logger.infoNormal(RESOURCES.totalRecordsAmount, this.sObjectName,
-          this.targetData.resourceString_Source_Target, String(this.targetTotalRecorsCount));
+          String(this.targetTotalRecorsCount),
+          this.targetData.resourceString_Source_Target);
       } catch (ex) {
         // Aggregate queries does not suppoted
         this.targetTotalRecorsCount = this.scriptObject.parsedQuery.limit || 0;

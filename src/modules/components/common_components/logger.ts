@@ -14,6 +14,10 @@ import ISfdmuCommand from '../../models/common_models/ISfdxCommand';
 import { Common } from './common';
 import { CONSTANTS } from './statics';
 
+
+
+// ------ Resources --------//
+// ----------------------//
 export enum RESOURCES {
 
   newLine = "newLine",
@@ -222,6 +226,102 @@ export enum RESOURCES {
   readingFromCacheFile = "readingFromCacheFile"
 }
 
+
+
+// ------ Enumerations/types --------//
+// ----------------------//
+/**
+ *STRING,SUCCESS,FAILURE,
+ STDOUT_ONLY,TABLE,JSON,
+ OBJECT,HEADER=30 => INFO level,
+
+ WARN=40 => WARN level
+
+ ERROR=50 => ERROR level
+
+ */
+export enum LOG_MESSAGE_TYPE {
+  STRING = 30,
+  SUCCESS = 31,
+  FAILURE = 32,
+  STDOUT_ONLY = 33,
+  TABLE = 34,
+  JSON = 35,
+  OBJECT = 36,
+  HEADER = 37,
+  WARN = 40,
+  ERROR = 50
+}
+
+export enum LOG_MESSAGE_VERBOSITY {
+  ALWAYS = -1,
+  NONE = 0,
+  MINIMAL = 1,
+  NORMAL = 2,
+  VERBOSE = 3
+}
+
+export enum LOG_LEVEL {
+  TRACE = 10,
+  DEBUG = 20,
+  INFO = 30,
+  WARN = 40,
+  ERROR = 50,
+  FATAL = 60
+}
+export interface IUxLogger {
+  log: Function,
+  styledJSON: Function,
+  warn: Function,
+  error: Function,
+  styledObject: Function,
+  table: Function,
+  prompt: Function,
+  styledHeader: Function,
+  startSpinner: Function,
+  stopSpinner: Function,
+  setSpinnerStatus: Function
+}
+
+export declare type Tokens = Array<string | boolean | number | null | undefined>;
+export interface IMessages {
+  getMessage(key: string, tokens?: Tokens): string;
+}
+export interface IResourceBundle {
+  getMessage(key: string, tokens?: any): string;
+}
+
+
+export interface IFinishMessage {
+  command: string,
+  cliCommandString: string,
+  message: string,
+  fullLog: string[],
+  stack: string[],
+  status: number,
+  statusString: string,
+  startTime: Date,
+  startTimeUTC: Date,
+  endTime: Date,
+  endTimeUTC: Date,
+  timeElapsedString: string
+}
+
+export enum COMMAND_EXIT_STATUSES {
+  SUCCESS = 0,
+  COMMAND_UNEXPECTED_ERROR = 1,
+  COMMAND_INITIALIZATION_ERROR = 2,
+  ORG_METADATA_ERROR = 3,
+  COMMAND_EXECUTION_ERROR = 4,
+  COMMAND_ABORTED_BY_USER = 5,
+  UNRESOLWABLE_WARNING = 6,
+  COMMAND_ABORTED_BY_ADDON = 7,
+}
+
+
+
+// ------ File Logger --------//
+// ---------------------------//
 class FileLogger {
 
   fileName: string;
@@ -257,6 +357,9 @@ class FileLogger {
 
 }
 
+
+// ------ Logger --------//
+// ----------------------//
 export class Logger implements IAppLogger {
 
   private _commandFullName: string;
@@ -273,8 +376,8 @@ export class Logger implements IAppLogger {
   private _commandMessages: IResourceBundle;
 
   private _uxLogger: IUxLogger;
-  private _uxLoggerLevel: LoggerLevel;
-  private _uxLoggerVerbosity: LOG_MESSAGE_VERBOSITY
+  private _uxLogLevel: LOG_LEVEL;
+  private _uxLogVerbosity: LOG_MESSAGE_VERBOSITY
 
   private _noPromptFlag: boolean;
   private _spinnerIsStarted = false;
@@ -312,25 +415,25 @@ export class Logger implements IAppLogger {
     this._startTime = new Date();
 
     if (quietFlag) {
-      this._uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.NONE;
+      this._uxLogVerbosity = LOG_MESSAGE_VERBOSITY.NONE;
     } else if (conciseFlag) {
-      this._uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.MINIMAL;
+      this._uxLogVerbosity = LOG_MESSAGE_VERBOSITY.MINIMAL;
     } else if (verboseFlag) {
-      this._uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.VERBOSE;
+      this._uxLogVerbosity = LOG_MESSAGE_VERBOSITY.VERBOSE;
     } else {
-      this._uxLoggerVerbosity = LOG_MESSAGE_VERBOSITY.NORMAL;
+      this._uxLogVerbosity = LOG_MESSAGE_VERBOSITY.NORMAL;
     }
 
-    this._uxLoggerLevel = (<any>LoggerLevel)[String(logLevelFlag).toUpperCase()];
+    this._uxLogLevel = (<any>LOG_LEVEL)[String(logLevelFlag).toUpperCase()];
 
-    if (this._uxLoggerLevel == LoggerLevel.DEBUG
-      || this._uxLoggerLevel == LoggerLevel.TRACE) {
-      this._printStackTrace = this._uxLoggerLevel == LoggerLevel.TRACE
-      this._uxLoggerLevel = LoggerLevel.INFO;
+    if (this._uxLogLevel == LOG_LEVEL.DEBUG
+      || this._uxLogLevel == LOG_LEVEL.TRACE) {
+      this._printStackTrace = this._uxLogLevel == LOG_LEVEL.TRACE
+      this._uxLogLevel = LOG_LEVEL.INFO;
     }
 
-    if (this._uxLoggerLevel == LoggerLevel.FATAL) {
-      this._uxLoggerLevel = LoggerLevel.ERROR;
+    if (this._uxLogLevel == LOG_LEVEL.FATAL) {
+      this._uxLogLevel = LOG_LEVEL.ERROR;
     }
 
     if (command) {
@@ -349,6 +452,215 @@ export class Logger implements IAppLogger {
     this.commandStartMessage();
 
   }
+
+
+  // ------ Logging methods --------//
+  // ----------------------//
+  log(message: string | object | ITableMessage,
+    logMessageType?: LOG_MESSAGE_TYPE,
+    verbosity?: LOG_MESSAGE_VERBOSITY,
+    ...tokens: string[]
+  ): void {
+
+    logMessageType = logMessageType || LOG_MESSAGE_TYPE.STRING;
+
+    const isSuccess = logMessageType == LOG_MESSAGE_TYPE.SUCCESS;
+    const isFailure = logMessageType == LOG_MESSAGE_TYPE.FAILURE;
+    const isStdoutOnly = logMessageType == LOG_MESSAGE_TYPE.STDOUT_ONLY;
+
+    logMessageType = isSuccess || isFailure || isStdoutOnly ? LOG_MESSAGE_TYPE.STRING : logMessageType;
+
+    verbosity = typeof verbosity == 'undefined' ? LOG_MESSAGE_VERBOSITY.NORMAL : verbosity;
+
+    if (typeof message == "undefined" || message == null) {
+      return;
+    }
+    message = typeof message == 'string' ? this.getResourceString.apply(this, [message, ...tokens]) : message;
+
+    let allowWriteLogsToMessageCache = true;
+
+    const allowWriteLogsToSTdOut = (
+      (verbosity <= this._uxLogVerbosity || verbosity == LOG_MESSAGE_VERBOSITY.ALWAYS)
+      && (
+        !this._jsonFlag
+        || this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON
+      ) && this._uxLogVerbosity != LOG_MESSAGE_VERBOSITY.NONE
+    ) || isStdoutOnly;
+
+    const allowWriteLogsToFile = this._filelogFlag
+      && logMessageType >= this._uxLogLevel
+      && (
+        !this._jsonFlag
+        || (this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON)
+      );
+
+    const omitDateWhenWriteLogsToFile = true;
+
+    const date = message && !isStdoutOnly ? this.getResourceString(RESOURCES.formattedDateLogTemplate, Common.formatDateTimeShort(new Date())) : '';
+    let logMessage: string;
+    let foreColor = "";
+
+    switch (logMessageType) {
+      default: foreColor = isSuccess ? "\x1b[32m" : isFailure ? "\x1b[35m" : "\x1b[36m"; break;
+      case LOG_MESSAGE_TYPE.HEADER: foreColor = "\x1b[38m"; break;
+      case LOG_MESSAGE_TYPE.ERROR: foreColor = "\x1b[31m"; break;
+      case LOG_MESSAGE_TYPE.WARN: foreColor = "\x1b[33m"; break;
+    }
+
+    switch (logMessageType) {
+
+      default:
+        logMessage = this.getResourceString(RESOURCES.infoLogTemplate, date, message as string);
+        allowWriteLogsToSTdOut && this._uxLogger.log(foreColor + logMessage);
+        break;
+
+      case LOG_MESSAGE_TYPE.ERROR:
+        logMessage = this.getResourceString(RESOURCES.errorLogTemplate, date, message as string);
+        allowWriteLogsToSTdOut && this._uxLogger.error(foreColor + logMessage);
+        break;
+
+      case LOG_MESSAGE_TYPE.WARN:
+        logMessage = this.getResourceString(RESOURCES.warnLogTemplate, date, message as string);
+        allowWriteLogsToSTdOut && this._uxLogger.warn(foreColor + logMessage);
+        allowWriteLogsToMessageCache = !this._noWarningsFlag;
+        break;
+
+      case LOG_MESSAGE_TYPE.TABLE:
+        logMessage = String(message);
+        allowWriteLogsToSTdOut && this._uxLogger.table((message as ITableMessage).tableBody, {
+          columns: (message as ITableMessage).tableColumns
+        });
+        break;
+
+      case LOG_MESSAGE_TYPE.JSON:
+        logMessage = JSON.stringify(message, null, 3);
+        allowWriteLogsToSTdOut && this._uxLogger.styledJSON(message);
+        allowWriteLogsToMessageCache = !this._jsonFlag;
+        break;
+
+      case LOG_MESSAGE_TYPE.OBJECT:
+        logMessage = JSON.stringify(message, null, 3);
+        allowWriteLogsToSTdOut && this._uxLogger.styledObject(message);
+        break;
+
+      case LOG_MESSAGE_TYPE.HEADER:
+        logMessage = String(message).toUpperCase();
+        allowWriteLogsToSTdOut && this._uxLogger.styledHeader(foreColor + message);
+        break;
+
+    }
+
+    allowWriteLogsToFile && this._fileLogger.log(logMessage, omitDateWhenWriteLogsToFile);
+    allowWriteLogsToMessageCache && this._messageCache.push(logMessage);
+
+  }
+
+  infoNormal(message: string, ...tokens: string[]): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.STRING, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
+  }
+
+  infoMinimal(message: string, ...tokens: string[]): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.STRING, LOG_MESSAGE_VERBOSITY.MINIMAL, ...tokens]);
+  }
+
+  infoVerbose(message: string, ...tokens: string[]): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.STRING, LOG_MESSAGE_VERBOSITY.VERBOSE, ...tokens]);
+  }
+
+  headerMinimal(message: string, ...tokens: string[]): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.MINIMAL, ...tokens]);
+  }
+
+  headerNormal(message: string, ...tokens: string[]): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
+  }
+
+  headerVerbose(message: string, ...tokens: string[]): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.VERBOSE, ...tokens]);
+  }
+
+  objectNormal(message: object): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.OBJECT, LOG_MESSAGE_VERBOSITY.NORMAL]);
+  }
+
+  objectMinimal(message: object): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.OBJECT, LOG_MESSAGE_VERBOSITY.MINIMAL]);
+  }
+
+  warn(message: string, ...tokens: string[]): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.WARN, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
+  }
+
+  error(message: string, ...tokens: string[]): void {
+    this.log.apply(this, [message, LOG_MESSAGE_TYPE.ERROR, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
+  }
+
+  // ------ Prompt --------//
+  // ----------------------//
+  async promptAsync(params: {
+    message: string,
+    options?: string,
+    default?: string,
+    nopromptDefault?: string,
+    timeout?: number
+  }, ...tokens: string[]
+  ): Promise<string> {
+
+    params.nopromptDefault = (typeof params.nopromptDefault == 'undefined' ? this.getResourceString(RESOURCES.defaultNopromptOption) : params.nopromptDefault || "").trim();
+
+    const date = this.getResourceString(RESOURCES.formattedDateLogTemplate, Common.formatDateTimeShort(new Date()));
+
+    params.options = (typeof params.options == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptOptions) : params.options || "").trim();
+    params.default = (typeof params.default == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptNoOption) : params.default || "").trim();
+    params.message = date + " " + (this.getResourceString.apply(this, [params.message, ...tokens]) || "").trim();
+    params.timeout = params.timeout || (params.options ? CONSTANTS.DEFAULT_USER_PROMPT_TIMEOUT_MS : CONSTANTS.DEFAULT_USER_PROMT_TEXT_ENTER_TIMEOUT_MS);
+
+    params.message = this.getResourceString(
+      params.options ? RESOURCES.userConfirmTemplate : RESOURCES.userTextInputTemplate,
+      params.message,
+      params.options);
+
+    let result = params.default;
+
+    try {
+      if (this._uxLogVerbosity == LOG_MESSAGE_VERBOSITY.NONE
+        || this._noPromptFlag
+        || this._jsonFlag
+        || this._silentFlag) {
+        this.infoNormal(params.message + ' ' + params.nopromptDefault);
+        result = params.nopromptDefault;
+      } else {
+        this.stopSpinner();
+        result = await this._uxLogger.prompt(
+          "\x1b[32m" + params.message,
+          {
+            default: params.default,
+            timeout: params.timeout
+          });
+      }
+    } catch (ex) { }
+    finally {
+      this.startSpinner();
+    }
+
+    return result;
+
+  }
+
+  async yesNoPromptAsync(message: string, ...tokens: string[]): Promise<boolean> {
+    return (await this.promptAsync.apply(this, [{
+      message
+    }, ...tokens])) != this.getResourceString(RESOURCES.defaultPromptNoOption);
+  }
+
+  async textPromptAsync(message: string, ...tokens: string[]): Promise<string> {
+    return (await this.promptAsync.apply(this, [{
+      default: "",
+      options: "",
+      message
+    }, ...tokens]));
+  }
+
 
 
   // ------ Start/Stop --------//
@@ -448,216 +760,6 @@ export class Logger implements IAppLogger {
 
   }
 
-
-  // ------ Logging --------//
-  // ----------------------//
-  log(message: string | object | ITableMessage,
-    logMessageType?: LOG_MESSAGE_TYPE,
-    verbosity?: LOG_MESSAGE_VERBOSITY,
-    ...tokens: string[]
-  ): void {
-
-    logMessageType = logMessageType || LOG_MESSAGE_TYPE.STRING;
-
-    const isSuccess = logMessageType == LOG_MESSAGE_TYPE.SUCCESS;
-    const isFailure = logMessageType == LOG_MESSAGE_TYPE.FAILURE;
-    const isStdoutOnly = logMessageType == LOG_MESSAGE_TYPE.STDOUT_ONLY;
-
-    logMessageType = isSuccess || isFailure || isStdoutOnly ? LOG_MESSAGE_TYPE.STRING : logMessageType;
-
-    verbosity = typeof verbosity == 'undefined' ? LOG_MESSAGE_VERBOSITY.NORMAL : verbosity;
-
-    if (typeof message == "undefined" || message == null) {
-      return;
-    }
-    message = typeof message == 'string' ? this.getResourceString.apply(this, [message, ...tokens]) : message;
-
-    let allowWriteLogsToCache = (verbosity <= this._uxLoggerVerbosity
-      || verbosity == LOG_MESSAGE_VERBOSITY.ALWAYS
-      || logMessageType == LOG_MESSAGE_TYPE.WARN
-      || logMessageType == LOG_MESSAGE_TYPE.ERROR);
-
-    const allowWriteLogsToSTdOut = allowWriteLogsToCache
-      && (!this._jsonFlag
-        || this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON)
-      && this._uxLoggerVerbosity != LOG_MESSAGE_VERBOSITY.NONE
-      || isStdoutOnly;
-
-    const allowWriteLogsToFile = this._filelogFlag
-      && logMessageType >= this._uxLoggerLevel
-      && (
-        !this._jsonFlag
-        || (this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON)
-      );
-
-    const omitDateWhenWriteLogsToFile = this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON;
-
-    const date = message && !isStdoutOnly ? this.getResourceString(RESOURCES.formattedDateLogTemplate, Common.formatDateTimeShort(new Date())) : '';
-    let logMessage: string;
-    let foreColor = "";
-
-    switch (logMessageType) {
-      default: foreColor = isSuccess ? "\x1b[32m" : isFailure ? "\x1b[35m" : "\x1b[36m"; break;
-      case LOG_MESSAGE_TYPE.HEADER: foreColor = "\x1b[38m"; break;
-      case LOG_MESSAGE_TYPE.ERROR: foreColor = "\x1b[31m"; break;
-      case LOG_MESSAGE_TYPE.WARN: foreColor = "\x1b[33m"; break;
-    }
-
-    switch (logMessageType) {
-
-      default:
-        logMessage = this.getResourceString(RESOURCES.infoLogTemplate, date, message as string);
-        allowWriteLogsToSTdOut && this._uxLogger.log(foreColor + logMessage);
-        break;
-
-      case LOG_MESSAGE_TYPE.ERROR:
-        logMessage = this.getResourceString(RESOURCES.errorLogTemplate, date, message as string);
-        allowWriteLogsToSTdOut && this._uxLogger.error(foreColor + logMessage);
-        break;
-
-      case LOG_MESSAGE_TYPE.WARN:
-        logMessage = this.getResourceString(RESOURCES.warnLogTemplate, date, message as string);
-        allowWriteLogsToSTdOut
-          && (allowWriteLogsToCache = allowWriteLogsToCache && !this._noWarningsFlag)
-          && this._uxLogger.warn(foreColor + logMessage);
-        break;
-
-      case LOG_MESSAGE_TYPE.TABLE:
-        logMessage = String(message);
-        allowWriteLogsToSTdOut && this._uxLogger.table((message as ITableMessage).tableBody, {
-          columns: (message as ITableMessage).tableColumns
-        });
-        break;
-
-      case LOG_MESSAGE_TYPE.JSON:
-        logMessage = JSON.stringify(message, null, 3);
-        allowWriteLogsToSTdOut && this._uxLogger.styledJSON(message);
-        allowWriteLogsToCache = !this._jsonFlag;
-        break;
-
-      case LOG_MESSAGE_TYPE.OBJECT:
-        logMessage = JSON.stringify(message, null, 3);
-        allowWriteLogsToSTdOut && this._uxLogger.styledObject(message);
-        break;
-
-      case LOG_MESSAGE_TYPE.HEADER:
-        logMessage = String(message).toUpperCase();
-        allowWriteLogsToSTdOut && this._uxLogger.styledHeader(foreColor + message);
-        break;
-
-    }
-
-    allowWriteLogsToFile && this._fileLogger.log(logMessage, omitDateWhenWriteLogsToFile);
-    allowWriteLogsToCache && this._messageCache.push(logMessage);
-
-  }
-
-  infoNormal(message: string, ...tokens: string[]): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.STRING, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
-  }
-
-  infoMinimal(message: string, ...tokens: string[]): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.STRING, LOG_MESSAGE_VERBOSITY.MINIMAL, ...tokens]);
-  }
-
-  infoVerbose(message: string, ...tokens: string[]): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.STRING, LOG_MESSAGE_VERBOSITY.VERBOSE, ...tokens]);
-  }
-
-  headerMinimal(message: string, ...tokens: string[]): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.MINIMAL, ...tokens]);
-  }
-
-  headerNormal(message: string, ...tokens: string[]): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
-  }
-
-  headerVerbose(message: string, ...tokens: string[]): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.HEADER, LOG_MESSAGE_VERBOSITY.VERBOSE, ...tokens]);
-  }
-
-  objectNormal(message: object): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.OBJECT, LOG_MESSAGE_VERBOSITY.NORMAL]);
-  }
-
-  objectMinimal(message: object): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.OBJECT, LOG_MESSAGE_VERBOSITY.MINIMAL]);
-  }
-
-  warn(message: string, ...tokens: string[]): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.WARN, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
-  }
-
-  error(message: string, ...tokens: string[]): void {
-    this.log.apply(this, [message, LOG_MESSAGE_TYPE.ERROR, LOG_MESSAGE_VERBOSITY.NORMAL, ...tokens]);
-  }
-
-  // ------ Prompt --------//
-  // ----------------------//
-  async promptAsync(params: {
-    message: string,
-    options?: string,
-    default?: string,
-    nopromptDefault?: string,
-    timeout?: number
-  }, ...tokens: string[]
-  ): Promise<string> {
-
-    params.nopromptDefault = (typeof params.nopromptDefault == 'undefined' ? this.getResourceString(RESOURCES.defaultNopromptOption) : params.nopromptDefault || "").trim();
-
-    const date = this.getResourceString(RESOURCES.formattedDateLogTemplate, Common.formatDateTimeShort(new Date()));
-
-    params.options = (typeof params.options == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptOptions) : params.options || "").trim();
-    params.default = (typeof params.default == 'undefined' ? this.getResourceString(RESOURCES.defaultPromptNoOption) : params.default || "").trim();
-    params.message = date + " " + (this.getResourceString.apply(this, [params.message, ...tokens]) || "").trim();
-    params.timeout = params.timeout || (params.options ? CONSTANTS.DEFAULT_USER_PROMPT_TIMEOUT_MS : CONSTANTS.DEFAULT_USER_PROMT_TEXT_ENTER_TIMEOUT_MS);
-
-    params.message = this.getResourceString(
-      params.options ? RESOURCES.userConfirmTemplate : RESOURCES.userTextInputTemplate,
-      params.message,
-      params.options);
-
-    let result = params.default;
-
-    try {
-      if (this._uxLoggerVerbosity == LOG_MESSAGE_VERBOSITY.NONE
-        || this._noPromptFlag
-        || this._jsonFlag
-        || this._silentFlag) {
-        this.infoNormal(params.message + ' ' + params.nopromptDefault);
-        result = params.nopromptDefault;
-      } else {
-        this.stopSpinner();
-        result = await this._uxLogger.prompt(
-          "\x1b[32m" + params.message,
-          {
-            default: params.default,
-            timeout: params.timeout
-          });
-      }
-    } catch (ex) { }
-    finally {
-      this.startSpinner();
-    }
-
-    return result;
-
-  }
-
-  async yesNoPromptAsync(message: string, ...tokens: string[]): Promise<boolean> {
-    return (await this.promptAsync.apply(this, [{
-      message
-    }, ...tokens])) != this.getResourceString(RESOURCES.defaultPromptNoOption);
-  }
-
-  async textPromptAsync(message: string, ...tokens: string[]): Promise<string> {
-    return (await this.promptAsync.apply(this, [{
-      default: "",
-      options: "",
-      message
-    }, ...tokens]));
-  }
-
   // ------ Spinner --------//
   // ----------------------//
   spinner(message?: string, ...tokens: string[]): void {
@@ -711,83 +813,7 @@ export class Logger implements IAppLogger {
 
 }
 
-export enum LOG_MESSAGE_TYPE {
-  STRING = 30,
-  SUCCESS = 31,
-  FAILURE = 32,
-  STDOUT_ONLY = 33,
-  TABLE = 34,
-  JSON = 35,
-  OBJECT = 36,
-  HEADER = 37,
-  ERROR = 50,
-  WARN = 40,
-}
 
-export enum LOG_MESSAGE_VERBOSITY {
-  ALWAYS = -1,
-  NONE = 0,
-  MINIMAL = 1,
-  NORMAL = 2,
-  VERBOSE = 3
-}
-
-export enum LoggerLevel {
-  TRACE = 10,
-  DEBUG = 20,
-  INFO = 30,
-  WARN = 40,
-  ERROR = 50,
-  FATAL = 60
-}
-export interface IUxLogger {
-  log: Function,
-  styledJSON: Function,
-  warn: Function,
-  error: Function,
-  styledObject: Function,
-  table: Function,
-  prompt: Function,
-  styledHeader: Function,
-  startSpinner: Function,
-  stopSpinner: Function,
-  setSpinnerStatus: Function
-}
-
-export declare type Tokens = Array<string | boolean | number | null | undefined>;
-export interface IMessages {
-  getMessage(key: string, tokens?: Tokens): string;
-}
-export interface IResourceBundle {
-  getMessage(key: string, tokens?: any): string;
-}
-
-
-export interface IFinishMessage {
-  command: string,
-  cliCommandString: string,
-  message: string,
-  fullLog: string[],
-  stack: string[],
-  status: number,
-  statusString: string,
-  startTime: Date,
-  startTimeUTC: Date,
-  endTime: Date,
-  endTimeUTC: Date,
-  timeElapsedString: string
-}
-
-export enum COMMAND_EXIT_STATUSES {
-  SUCCESS = 0,
-  COMMAND_UNEXPECTED_ERROR = 1,
-  COMMAND_INITIALIZATION_ERROR = 2,
-  ORG_METADATA_ERROR = 3,
-  COMMAND_EXECUTION_ERROR = 4,
-  COMMAND_ABORTED_BY_USER = 5,
-  UNRESOLWABLE_WARNING = 6,
-  COMMAND_ABORTED_BY_ADDON = 7,
-}
 
 
 
