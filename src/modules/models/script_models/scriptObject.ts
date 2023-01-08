@@ -5,33 +5,44 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
+import 'reflect-metadata';
+import 'es6-shim';
 
-
-import "reflect-metadata";
-import "es6-shim";
-import { Type } from "class-transformer";
-import { Common } from "../../components/common_components/common";
-import { CONSTANTS } from "../../components/common_components/statics";
-import { RESOURCES } from "../../components/common_components/logger";
-import { Sfdx } from "../../components/common_components/sfdx";
+import { Type } from 'class-transformer';
+import * as deepClone from 'deep.clone';
 import {
-  FieldType,
-  Query,
-  parseQuery,
   composeQuery,
   Field as SOQLField,
-  getComposedField
+  FieldType,
+  getComposedField,
+  parseQuery,
+  Query,
 } from 'soql-parser-js';
-import { ScriptMockField, Script, SObjectDescribe, MigrationJobTask, ScriptMappingItem, ObjectFieldMapping } from "..";
-import SFieldDescribe from "../sf_models/sfieldDescribe";
-import { CommandInitializationError, OrgMetadataError } from "../common_models/errors";
-import * as deepClone from 'deep.clone';
 
-import { DATA_MEDIA_TYPE, OPERATION } from "../../components/common_components/enumerations";
-import ScriptAddonManifestDefinition from "./scriptAddonManifestDefinition";
-import ISfdmuRunScriptObject from "../../../addons/components/sfdmu-run/ISfdmuRunScriptObject";
-
-
+import {
+  MigrationJobTask,
+  ObjectFieldMapping,
+  Script,
+  ScriptMappingItem,
+  ScriptMockField,
+  SObjectDescribe,
+} from '../';
+import ISfdmuRunScriptObject
+  from '../../../addons/components/sfdmu-run/ISfdmuRunScriptObject';
+import { Common } from '../../components/common_components/common';
+import {
+  DATA_MEDIA_TYPE,
+  OPERATION,
+} from '../../components/common_components/enumerations';
+import { RESOURCES } from '../../components/common_components/logger';
+import { Sfdx } from '../../components/common_components/sfdx';
+import { CONSTANTS } from '../../components/common_components/statics';
+import {
+  CommandInitializationError,
+  OrgMetadataError,
+} from '../common_models/errors';
+import SFieldDescribe from '../sf_models/sfieldDescribe';
+import ScriptAddonManifestDefinition from './scriptAddonManifestDefinition';
 
 /**
  * Parsed object

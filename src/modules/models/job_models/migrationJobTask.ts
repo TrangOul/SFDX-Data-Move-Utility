@@ -5,39 +5,71 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-
-
-
-import { Common } from "../../components/common_components/common";
-import { CONSTANTS } from "../../components/common_components/statics";
-import { Logger, RESOURCES, LOG_MESSAGE_VERBOSITY, LOG_MESSAGE_TYPE } from "../../components/common_components/logger";
-import { Sfdx } from "../../components/common_components/sfdx";
-import {
-  Query,
-  parseQuery,
-  Condition,
-  WhereClause,
-  composeQuery,
-  getComposedField,
-  Field as SOQLField,
-  FieldType
-} from 'soql-parser-js';
-import { ScriptObject, MigrationJob as Job, CommandExecutionError, ScriptOrg, Script, ScriptMockField, TaskData, TaskOrgData, CachedCSVContent, ProcessedData } from "..";
-import SFieldDescribe from "../sf_models/sfieldDescribe";
-import * as fs from 'fs';
+import * as casual from 'casual';
 import * as deepClone from 'deep.clone';
-import { BulkApiV2_0Engine } from "../../components/api_engines/bulkApiV2_0Engine";
-import { IApiEngine } from "../api_models/helper_interfaces";
-import { BulkApiV1_0Engine } from "../../components/api_engines/bulkApiV1_0Engine";
-import { RestApiEngine } from "../../components/api_engines/restApiEngine";
-const alasql = require("alasql");
-import * as casual from "casual";
-import { MockGenerator } from '../../components/common_components/mockGenerator';
-import { ICSVIssueCsvRow, IMissingParentLookupRecordCsvRow, IMockField, IFieldMapping, IFieldMappingResult } from '../common_models/helper_interfaces';
-import { ADDON_EVENTS, DATA_MEDIA_TYPE, MESSAGE_IMPORTANCE, OPERATION, RESULT_STATUSES, SPECIAL_MOCK_PATTERN_TYPES } from '../../components/common_components/enumerations';
+import * as fs from 'fs';
+import {
+  composeQuery,
+  Condition,
+  Field as SOQLField,
+  FieldType,
+  getComposedField,
+  parseQuery,
+  Query,
+  WhereClause,
+} from 'soql-parser-js';
+
+import {
+  CachedCSVContent,
+  CommandExecutionError,
+  MigrationJob as Job,
+  ProcessedData,
+  Script,
+  ScriptMockField,
+  ScriptObject,
+  ScriptOrg,
+  TaskData,
+  TaskOrgData,
+} from '../';
+import {
+  BulkApiV1_0Engine,
+} from '../../components/api_engines/bulkApiV1_0Engine';
+import {
+  BulkApiV2_0Engine,
+} from '../../components/api_engines/bulkApiV2_0Engine';
+import { RestApiEngine } from '../../components/api_engines/restApiEngine';
+import { Common } from '../../components/common_components/common';
+import {
+  ADDON_EVENTS,
+  DATA_MEDIA_TYPE,
+  MESSAGE_IMPORTANCE,
+  OPERATION,
+  RESULT_STATUSES,
+  SPECIAL_MOCK_PATTERN_TYPES,
+} from '../../components/common_components/enumerations';
+import {
+  LOG_MESSAGE_TYPE,
+  LOG_MESSAGE_VERBOSITY,
+  Logger,
+  RESOURCES,
+} from '../../components/common_components/logger';
+import {
+  MockGenerator,
+} from '../../components/common_components/mockGenerator';
+import { Sfdx } from '../../components/common_components/sfdx';
+import { CONSTANTS } from '../../components/common_components/statics';
 import { ApiInfo } from '../api_models';
+import { IApiEngine } from '../api_models/helper_interfaces';
+import {
+  ICSVIssueCsvRow,
+  IFieldMapping,
+  IFieldMappingResult,
+  IMissingParentLookupRecordCsvRow,
+  IMockField,
+} from '../common_models/helper_interfaces';
+import SFieldDescribe from '../sf_models/sfieldDescribe';
 
-
+const alasql = require("alasql");
 
 MockGenerator.createCustomGenerators(casual);
 

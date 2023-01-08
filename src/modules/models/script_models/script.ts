@@ -1,4 +1,3 @@
-import { Sfdx } from './../../components/common_components/sfdx';
 /*
  * Copyright (c) 2020, salesforce.com, inc.
  * All rights reserved.
@@ -6,41 +5,54 @@ import { Sfdx } from './../../components/common_components/sfdx';
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
+import 'reflect-metadata';
+import 'es6-shim';
 
-
-import "reflect-metadata";
-import "es6-shim";
-import { Type } from "class-transformer";
-import { Common } from "../../components/common_components/common";
-import { CONSTANTS } from "../../components/common_components/statics";
-import { Logger, RESOURCES } from "../../components/common_components/logger";
+import { Type } from 'class-transformer';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   composeQuery,
+  Field as SOQLField,
   getComposedField,
-  Field as SOQLField
 } from 'soql-parser-js';
-import { ScriptOrg, ScriptObject, ObjectFieldMapping, SObjectDescribe, ScriptObjectSet } from "..";
-import { CommandInitializationError, CommandExecutionError } from "../common_models/errors";
-import MigrationJob from "../job_models/migrationJob";
-import * as path from 'path';
-import * as fs from 'fs';
 
-import { DATA_CACHE_TYPES, DATA_MEDIA_TYPE, OPERATION } from "../../components/common_components/enumerations";
-
-import ICommandRunInfo from "../common_models/ICommandRunInfo";
-import IPluginInfo from "../common_models/IPluginInfo";
-import ScriptAddonManifestDefinition from "./scriptAddonManifestDefinition";
-
-import SfdmuRunAddonRuntime from "../../../addons/components/sfdmu-run/sfdmuRunAddonRuntime";
-import SfdmuRunAddonManager from "../../../addons/components/sfdmu-run/sfdmuRunAddonManager";
-import ISfdmuRunScript from "../../../addons/components/sfdmu-run/ISfdmuRunScript";
-import ISfdmuRunScriptObject from "../../../addons/components/sfdmu-run/ISfdmuRunScriptObject";
-import { IAppScript } from "../../app/appModels";
-
-
-
-
-
+import {
+  ObjectFieldMapping,
+  ScriptObject,
+  ScriptObjectSet,
+  ScriptOrg,
+  SObjectDescribe,
+} from '../';
+import ISfdmuRunScript
+  from '../../../addons/components/sfdmu-run/ISfdmuRunScript';
+import ISfdmuRunScriptObject
+  from '../../../addons/components/sfdmu-run/ISfdmuRunScriptObject';
+import SfdmuRunAddonManager
+  from '../../../addons/components/sfdmu-run/sfdmuRunAddonManager';
+import SfdmuRunAddonRuntime
+  from '../../../addons/components/sfdmu-run/sfdmuRunAddonRuntime';
+import { IAppScript } from '../../app/appModels';
+import { Common } from '../../components/common_components/common';
+import {
+  DATA_CACHE_TYPES,
+  DATA_MEDIA_TYPE,
+  OPERATION,
+} from '../../components/common_components/enumerations';
+import {
+  Logger,
+  RESOURCES,
+} from '../../components/common_components/logger';
+import { Sfdx } from '../../components/common_components/sfdx';
+import { CONSTANTS } from '../../components/common_components/statics';
+import {
+  CommandExecutionError,
+  CommandInitializationError,
+} from '../common_models/errors';
+import ICommandRunInfo from '../common_models/ICommandRunInfo';
+import IPluginInfo from '../common_models/IPluginInfo';
+import MigrationJob from '../job_models/migrationJob';
+import ScriptAddonManifestDefinition from './scriptAddonManifestDefinition';
 
 /**
  * The script object which is parsed from the script file

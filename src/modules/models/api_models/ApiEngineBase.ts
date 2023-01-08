@@ -5,20 +5,37 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Logger, RESOURCES } from "../../components/common_components/logger";
-import { IApiJobCreateResult, IApiEngineInitParameters, ICsvChunk } from "./helper_interfaces";
-import { ApiInfo, IApiEngine } from ".";
-import { Common } from "../../components/common_components/common";
-import { CsvChunks, ScriptObject } from "..";
-import { IOrgConnectionData, IFieldMapping, IFieldMappingResult } from "../common_models/helper_interfaces";
-import { DATA_CACHE_TYPES, OPERATION } from "../../components/common_components/enumerations";
-import { CONSTANTS } from "../../components/common_components/statics";
-
-
 import * as fs from 'fs';
 import * as path from 'path';
 
-
+import {
+  CsvChunks,
+  ScriptObject,
+} from '../';
+import { Common } from '../../components/common_components/common';
+import {
+  DATA_CACHE_TYPES,
+  OPERATION,
+} from '../../components/common_components/enumerations';
+import {
+  Logger,
+  RESOURCES,
+} from '../../components/common_components/logger';
+import { CONSTANTS } from '../../components/common_components/statics';
+import {
+  IFieldMapping,
+  IFieldMappingResult,
+  IOrgConnectionData,
+} from '../common_models/helper_interfaces';
+import {
+  ApiInfo,
+  IApiEngine,
+} from './';
+import {
+  IApiEngineInitParameters,
+  IApiJobCreateResult,
+  ICsvChunk,
+} from './helper_interfaces';
 
 /**
  * Base class for all ApiProcess inherited classes

@@ -1,25 +1,30 @@
-
 /*
  * Copyright (c) 2020, salesforce.com, inc.
  * All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
-import * as path from 'path';
+
+import 'reflect-metadata';
+import 'es6-shim';
+
+import { plainToClass } from 'class-transformer';
 import * as fs from 'fs';
-import "reflect-metadata";
-import "es6-shim";
-import { plainToClass } from "class-transformer";
-import { Logger, RESOURCES } from "../components/common_components/logger";
-import * as models from '../models';
-import { CONSTANTS } from '../components/common_components/statics';
-import { MigrationJob as Job, ScriptObjectSet } from '../models';
-import { CommandInitializationError } from '../models/common_models/errors';
+import * as path from 'path';
+
 import { ADDON_EVENTS } from '../components/common_components/enumerations';
+import {
+  Logger,
+  RESOURCES,
+} from '../components/common_components/logger';
+import { CONSTANTS } from '../components/common_components/statics';
+import * as models from '../models';
+import {
+  MigrationJob as Job,
+  ScriptObjectSet,
+} from '../models';
+import { CommandInitializationError } from '../models/common_models/errors';
 import IPluginInfo from '../models/common_models/IPluginInfo';
-
-
-
 
 /**
  * SFDMU:RUN CLI command

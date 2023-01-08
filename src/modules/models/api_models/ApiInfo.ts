@@ -5,8 +5,11 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import ApiResultRecord from "./ApiResultRecord";
-import { MESSAGE_IMPORTANCE, RESULT_STATUSES } from "../../components/common_components/enumerations";
+import {
+  MESSAGE_IMPORTANCE,
+  RESULT_STATUSES,
+} from '../../components/common_components/enumerations';
+import ApiResultRecord from './ApiResultRecord';
 
 /**
  * Holds information about the progress of the executed SFDC API callouts

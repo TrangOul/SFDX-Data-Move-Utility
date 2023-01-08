@@ -5,21 +5,34 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { MigrationJobTask, SFieldDescribe, ScriptObject, ScriptOrg } from "..";
-import { CONSTANTS } from "../../components/common_components/statics";
-import { RESOURCES } from "../../components/common_components/logger";
-import { Common } from "../../components/common_components/common";
-import { IMissingParentLookupRecordCsvRow, IOrgConnectionData } from "./helper_interfaces";
-import { ICsvChunk } from "../api_models";
-import "reflect-metadata";
-import "es6-shim";
-import { Type } from "class-transformer";
+import 'reflect-metadata';
+import 'es6-shim';
 
-import { DATA_MEDIA_TYPE, OPERATION } from "../../components/common_components/enumerations";
+import { Type } from 'class-transformer';
 
-import ScriptAddonManifestDefinition from "../script_models/scriptAddonManifestDefinition";
-import { ISfdmuRunCustomAddonProcessedData } from "../../../addons/modules/sfdmu-run/custom-addons/package";
-
+import {
+  MigrationJobTask,
+  ScriptObject,
+  ScriptOrg,
+  SFieldDescribe,
+} from '../';
+import {
+  ISfdmuRunCustomAddonProcessedData,
+} from '../../../addons/modules/sfdmu-run/custom-addons/package';
+import { Common } from '../../components/common_components/common';
+import {
+  DATA_MEDIA_TYPE,
+  OPERATION,
+} from '../../components/common_components/enumerations';
+import { RESOURCES } from '../../components/common_components/logger';
+import { CONSTANTS } from '../../components/common_components/statics';
+import { ICsvChunk } from '../api_models';
+import ScriptAddonManifestDefinition
+  from '../script_models/scriptAddonManifestDefinition';
+import {
+  IMissingParentLookupRecordCsvRow,
+  IOrgConnectionData,
+} from './helper_interfaces';
 
 type IProcessedData = ISfdmuRunCustomAddonProcessedData;
 

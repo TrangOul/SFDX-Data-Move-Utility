@@ -5,10 +5,15 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-import { Common } from "../components/common_components/common";
-import { ADDON_EVENTS } from "../components/common_components/enumerations";
-import { COMMAND_EXIT_STATUSES, Logger, LOG_MESSAGE_TYPE, LOG_MESSAGE_VERBOSITY, RESOURCES } from "../components/common_components/logger";
-
+import { Common } from '../components/common_components/common';
+import { ADDON_EVENTS } from '../components/common_components/enumerations';
+import {
+  COMMAND_EXIT_STATUSES,
+  LOG_MESSAGE_TYPE,
+  LOG_MESSAGE_VERBOSITY,
+  Logger,
+  RESOURCES,
+} from '../components/common_components/logger';
 import {
   CommandAbortedByAddOnError,
   CommandAbortedByUserError,
@@ -16,12 +21,11 @@ import {
   CommandInitializationError,
   OrgMetadataError,
   SuccessExit,
-  UnresolvableWarning
-} from "../models";
-import ISfdmuCommand from "../models/common_models/ISfdxCommand";
-import { IRunProcess } from "./IRunProcess";
-import { RunCommand } from "./runCommand";
-
+  UnresolvableWarning,
+} from '../models';
+import ISfdmuCommand from '../models/common_models/ISfdxCommand';
+import { IRunProcess } from './IRunProcess';
+import { RunCommand } from './runCommand';
 
 export default class RunCommandExecutor {
 

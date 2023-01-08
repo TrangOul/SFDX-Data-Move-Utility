@@ -5,28 +5,28 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-
-
-import { FlagsConfig, SfdxCommand, flags } from '@salesforce/command';
-import { Messages } from '@salesforce/core';
-
-import { AnyJson } from '@salesforce/ts-types';
 import {
-  IUxLogger,
-  IResourceBundle
-} from "../../modules/components/common_components/logger";
-import { RunCommand } from "../../modules/commands_processors/runCommand";
-import ISfdmuCommand from '../../modules/models/common_models/ISfdxCommand';
+  flags,
+  FlagsConfig,
+  SfdxCommand,
+} from '@salesforce/command';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+
 import { IRunProcess } from '../../modules/commands_processors/IRunProcess';
-import RunCommandExecutor from '../../modules/commands_processors/runCommandExecutor';
-
-
+import { RunCommand } from '../../modules/commands_processors/runCommand';
+import RunCommandExecutor
+  from '../../modules/commands_processors/runCommandExecutor';
+import {
+  IResourceBundle,
+  IUxLogger,
+} from '../../modules/components/common_components/logger';
+import ISfdmuCommand from '../../modules/models/common_models/ISfdxCommand';
 
 Messages.importMessagesDirectory(__dirname);
 
 const commandMessages = Messages.loadMessages('sfdmu', 'run');
 const resources = Messages.loadMessages('sfdmu', 'resources');
-
 export default class Run extends SfdxCommand implements IRunProcess {
 
   exportJson: string;

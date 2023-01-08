@@ -5,28 +5,46 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-
+import * as fs from 'fs';
+import {
+  DescribeSObjectResult,
+  QueryResult,
+} from 'jsforce';
+import * as path from 'path';
 import {
   composeQuery,
   Field as SOQLField,
   getComposedField,
   parseQuery,
 } from 'soql-parser-js';
-import { CONSTANTS } from './statics';
-import { DescribeSObjectResult, QueryResult } from 'jsforce';
-import { SFieldDescribe, SObjectDescribe, CommandExecutionError, ObjectFieldMapping } from '../../models';
+
+import {
+  IAppLogger,
+  IAppScriptOrg,
+  IAppSfdxService,
+} from '../../app/appModels';
+import {
+  CommandExecutionError,
+  ObjectFieldMapping,
+  SFieldDescribe,
+  SObjectDescribe,
+} from '../../models';
+import {
+  IBlobField,
+  ICachedRecords,
+} from '../../models/api_models';
+import {
+  IFieldMapping,
+  IFieldMappingResult,
+  IIdentityInfo,
+  IOrgConnectionData,
+} from '../../models/common_models/helper_interfaces';
 import { Common } from './common';
-import { IOrgConnectionData, IFieldMapping, IFieldMappingResult, IIdentityInfo } from '../../models/common_models/helper_interfaces';
-import { RESOURCES } from './logger';
-import { IBlobField, ICachedRecords } from '../../models/api_models';
 import { DATA_CACHE_TYPES } from './enumerations';
+import { RESOURCES } from './logger';
+import { CONSTANTS } from './statics';
 
 var jsforce = require("jsforce");
-
-import * as fs from 'fs';
-import * as path from 'path';
-import { IAppLogger, IAppScriptOrg, IAppSfdxService } from '../../app/appModels';
-
 
 export class Sfdx implements IAppSfdxService, IFieldMapping {
 

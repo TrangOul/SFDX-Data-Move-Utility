@@ -5,12 +5,8 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-
-
-
-import { IBlobField } from "../../models/api_models";
-import { SPECIAL_MOCK_PATTERN_TYPES } from "./enumerations";
-
+import { IBlobField } from '../../models/api_models';
+import { SPECIAL_MOCK_PATTERN_TYPES } from './enumerations';
 
 export const CONSTANTS = {
 

@@ -5,17 +5,14 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
  */
 
-
-
-import * as path from 'path';
 import * as fs from 'fs';
-import { Common } from './common';
-import { CONSTANTS } from './statics';
+import * as path from 'path';
+
+import { IAppLogger } from '../../app/appModels';
 import { ITableMessage } from '../../models/common_models/helper_interfaces';
 import ISfdmuCommand from '../../models/common_models/ISfdxCommand';
-import { IAppLogger } from '../../app/appModels';
-
-
+import { Common } from './common';
+import { CONSTANTS } from './statics';
 
 export enum RESOURCES {
 
