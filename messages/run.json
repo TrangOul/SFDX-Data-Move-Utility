@@ -1,6 +1,6 @@
 {
-    "commandDescription": "Starts execution of the migration job using the Advanced Salesforce Data Loader SFDX Plugin (SFDMU).\nThe SFDX Data Move Utility (SFDMU) hepls you to populate your org (scratch/development/sandbox/production) with data imported from another org or CSV file.\nRefer https://help.sfdmu.com for the detailed help information.",
-    "commandLongDescription": "The Advanced Salesforce Data Loader SFDX Plugin (SFDMU) helps you to populate your org (scratch/development/sandbox/production) with data imported from another org or CSV file.\nRefer https://help.sfdmu.com for the detailed help information.",
+    "commandDescription": "Starts execution of the migration job using the SFDX Data Move Utility Plugin (SFDMU).\nRefer https://help.sfdmu.com for the detailed help information.",
+    "commandLongDescription": "Starts execution of the migration job using the SFDX Data Move Utility Plugin (SFDMU).\nRefer https://help.sfdmu.com for the detailed help information.",
 
     "sourceusernameFlagDescription": "Source org username/alias or 'csvfile' for csv load",
     "sourceusernameFlagLongDescription": "Provide username or alias for the Source org or 'csvfile' if CSV files are used as data source.",

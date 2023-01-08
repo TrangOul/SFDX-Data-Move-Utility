@@ -268,6 +268,7 @@ export class Logger implements IAppLogger {
   private _startTime: Date;
   private _fileLogger: FileLogger;
   private _noWarningsFlag: boolean;
+  private _commandOutputMode: boolean;
   private _printStackTrace = false;
 
   private _resources: IResourceBundle;
@@ -296,7 +297,8 @@ export class Logger implements IAppLogger {
     jsonFlag: boolean,
     noPromptFlag: boolean,
     noWarningsFlag: boolean,
-    fileLogFlag: boolean) {
+    fileLogFlag: boolean,
+    commandOutputMode: boolean) {
 
     this._resources = resources;
     this._commandMessages = commandMessages;
@@ -307,6 +309,7 @@ export class Logger implements IAppLogger {
     this._noPromptFlag = noPromptFlag;
     this._noWarningsFlag = noWarningsFlag;
     this._silentFlag = quietFlag;
+    this._commandOutputMode = commandOutputMode;
 
     this._startTime = new Date();
 
@@ -460,9 +463,9 @@ export class Logger implements IAppLogger {
 
     const isSuccess = logMessageType == LOG_MESSAGE_TYPE.SUCCESS;
     const isFailure = logMessageType == LOG_MESSAGE_TYPE.FAILURE;
-    const isStdout = logMessageType == LOG_MESSAGE_TYPE.STDOUT;
+    const isStdoutOnly = logMessageType == LOG_MESSAGE_TYPE.STDOUT_ONLY;
 
-    logMessageType = isSuccess || isFailure || isStdout ? LOG_MESSAGE_TYPE.STRING : logMessageType;
+    logMessageType = isSuccess || isFailure || isStdoutOnly ? LOG_MESSAGE_TYPE.STRING : logMessageType;
 
     verbosity = typeof verbosity == 'undefined' ? LOG_MESSAGE_VERBOSITY.NORMAL : verbosity;
 
@@ -480,7 +483,7 @@ export class Logger implements IAppLogger {
       && (!this._jsonFlag
         || this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON)
       && this._uxLoggerVerbosity != LOG_MESSAGE_VERBOSITY.NONE
-      || isStdout;
+      || isStdoutOnly;
 
     const allowWriteLogsToFile = this._filelogFlag
       && logMessageType >= this._uxLoggerLevel
@@ -491,7 +494,7 @@ export class Logger implements IAppLogger {
 
     const omitDateWhenWriteLogsToFile = this._jsonFlag && logMessageType == LOG_MESSAGE_TYPE.JSON;
 
-    const date = message ? this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date())) : '';
+    const date = message && !isStdoutOnly ? this.getResourceString(RESOURCES.loggerDateFormat, Common.formatDateTimeShort(new Date())) : '';
     let logMessage: string;
     let foreColor = "";
 
@@ -673,7 +676,9 @@ export class Logger implements IAppLogger {
   }
 
   startSpinner() {
-    this.spinner(RESOURCES.commandInProgress);
+    if (!this._commandOutputMode) {
+      this.spinner(RESOURCES.commandInProgress);
+    }
   }
 
   stopSpinner() {
@@ -712,7 +717,7 @@ export enum LOG_MESSAGE_TYPE {
   STRING = 30,
   SUCCESS = 31,
   FAILURE = 32,
-  STDOUT = 33,
+  STDOUT_ONLY = 33,
   TABLE = 34,
   JSON = 35,
   OBJECT = 36,

@@ -34,6 +34,7 @@ export default class RunCommandExecutor {
     runProcess.m_flags.verbose = runProcess.m_flags.verbose && !runProcess.m_flags.json;
     runProcess.m_flags.quiet = runProcess.m_flags.quiet || runProcess.m_flags.silent || runProcess.m_flags.version;
     runProcess.m_flags.filelog = !!runProcess.m_flags.filelog && !runProcess.m_flags.version;
+    runProcess.m_flags.commandoutput = runProcess.m_flags.version;
 
     runProcess.cmd = {
       statics: runProcess["statics"],
@@ -53,7 +54,8 @@ export default class RunCommandExecutor {
       runProcess.m_flags.json,
       runProcess.m_flags.noprompt,
       runProcess.m_flags.nowarnings,
-      runProcess.m_flags.filelog);
+      runProcess.m_flags.filelog,
+      runProcess.m_flags.commandoutput);
 
     try {
 
@@ -63,7 +65,9 @@ export default class RunCommandExecutor {
       if (runProcess.m_flags.version) {
 
         // Exit - success
-        Common.logger.log(RESOURCES.pluginVersion, LOG_MESSAGE_TYPE.STDOUT,
+        Common.logger.log(
+          RESOURCES.pluginVersion,
+          LOG_MESSAGE_TYPE.STDOUT_ONLY,
           LOG_MESSAGE_VERBOSITY.ALWAYS,
           pinfo.pluginName, pinfo.version);
         Common.logger.commandFinishMessage("", COMMAND_EXIT_STATUSES.SUCCESS);
