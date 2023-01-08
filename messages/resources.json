@@ -195,7 +195,7 @@
     "processingAddon": "Triggering Add-On events ...",
     "runAddonMethod": "{%s} Add-On event:%s has been triggered.",
     "nothingToProcess": "No Add-On modules found to run.",
-    "startAddonExecute" : "[%s] {%s} The Add-On module is running ...",
+    "startAddonExecute" : "[%s] {%s} The Add-On module has started ...",
     "finishAddonExecute" : "[%s] {%s} The Add-On module has stopped.",
     "coreAddonMessageTemplate" : "[%s] {%s} %s.",
     "runAddonMethodCompleted": "{%s} Add-On event:%s has been completed.",
