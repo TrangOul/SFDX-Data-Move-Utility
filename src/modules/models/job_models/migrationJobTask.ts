@@ -281,7 +281,7 @@ export default class MigrationJobTask {
      * @param {*} firstRow
      */
     function ___mapCSVValues(firstRow: any) {
-      self.logger.infoNormal(RESOURCES.mappingRawCsvValues, self.sObjectName);
+      self.logger.infoNormal(RESOURCES.mappingCsvValues, self.sObjectName);
       let fields = Object.keys(firstRow);
       let csvRows = [...currentFileMap.values()];
       fields.forEach(field => {
@@ -1853,7 +1853,7 @@ export default class MigrationJobTask {
     if (records.length == 0 || !this.scriptObject.useValuesMapping) {
       return;
     }
-    this.logger.infoNormal(RESOURCES.mappingRawValues, this.sObjectName);
+    this.logger.infoNormal(RESOURCES.mappingValues, this.sObjectName);
     let fields = Object.keys(records[0]);
     fields.forEach(field => {
       let key = this.sObjectName + field;
